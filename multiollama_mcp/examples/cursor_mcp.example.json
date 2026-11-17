@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "multillama": {
+      "command": "python",
+      "args": ["/absolute/path/to/multiollama_mcp/ml_mcp_server.py"],
+      "env": {
+        "ML_BACKEND_URL": "http://127.0.0.1:8200"
+      }
+    }
+  }
+}

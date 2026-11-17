@@ -1,0 +1,20 @@
+# MultiOllama backend — runtime dependencies
+#
+# The proven core needs the Ollama Python client; the server layer is
+# FastAPI + uvicorn + pydantic + websockets. Everything is pure-Python
+# and cross-platform (Linux / Windows / macOS).
+#
+# Optional extras:
+#   psutil        -> POST /control/endpoints/scan (LAN Ollama discovery)
+#   mcp           -> native MCP engine (auto-degraded when missing)
+
+ollama>=0.4.0
+requests>=2.28
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.5
+websockets>=12.0
+
+# --- optional ---
+# psutil>=5.9
+# mcp>=1.0

@@ -1,0 +1,122 @@
+MARKDOWN VAULT — PRIMARY KNOWLEDGE BASE (MANDATORY)
+
+The markdown-vault MCP is the team's shared, permanent, searchable knowledge base.
+It is the SINGLE SOURCE OF TRUTH for facts about the user, the environment, projects,
+credentials, infrastructure, decisions, and anything learned in past sessions.
+
+EVERY agent MUST use it on EVERY turn. No exceptions. Treat "I didn't check the vault"
+as a failure. If you are unsure whether something is in the vault — search it.
+
+=== TOOLS AVAILABLE (markdown-vault MCP) ===
+
+vault:
+- vault(action="list", directory=...) → browse notes/folders
+- vault(action="read", path=...) → read a note
+- vault(action="create", path=..., content=...) → create a note
+- vault(action="update", path=..., content=...) → overwrite a note
+- vault(action="delete", path=...) → delete a note (only if outdated/wrong)
+- vault(action="stat", path=...) → metadata
+- vault(action="create_from_template", templatePath=..., variables=...) → scaffold
+
+view (read/search):
+- view(action="search", query=..., directory=...) → keyword/heading-aware search (TF-IDF + proximity)
+- view(action="semantic_search", query=...) → conceptual/fuzzy hybrid search
+- view(action="global_search", query=...) → exact-match grep across the whole vault
+- view(action="outline", path=... or directory=...) → structure tree
+- view(action="read", path=..., heading=..., headingDepth=...) → full note or one section
+- view(action="frontmatter_get", path=...) → YAML metadata
+- view(action="bulk_read", items=[{path, heading}]) → read many at once
+- view(action="backlinks", path=...) → notes linking to a path
+
+edit (safe edits):
+- edit(action="append"/"prepend"/"replace"/"delete", path=..., heading=..., content=...) → section edits
+- edit(action="line_replace"/"string_replace", path=..., searchText=..., content=..., replaceAll=...) → targeted edits
+- edit(action="frontmatter_set", path=..., content=...) → merge YAML metadata
+- edit(..., dryRun=true) → preview diff without saving
+- edit(operations=[...]) → batch up to 50 edits
+
+workflow / system:
+- workflow(action="status"/"transition"/"history"/"reset") → agent workflow state
+- system(action="status"/"reindex"/"overview"/"overview_status"/"prepare_overview"/"save_overview") → vault health
+
+=== MANDATORY RULES ===
+
+1. BEFORE answering ANY user request or executing ANY task:
+   a. Call view(action="search") and/or view(action="semantic_search") with keywords from the request.
+   b. If the request touches a known topic, also call view(action="global_search") for exact phrases.
+   c. Read every promising result with view(action="read") (or bulk_read) and synthesize into your response.
+   d. If nothing is found, say so explicitly and then proceed — but you MUST have searched first.
+
+2. SAVE EVERYTHING — no information is too small. After learning ANY new fact, detail, observation,
+   decision, preference, credential, IP, path, command, error, fix, or relationship, persist it:
+   a. First search the vault for an existing note on the topic (view search / global_search).
+   b. If found → edit(action="append" or "replace"/"string_replace") to add/update the new info.
+      Use edit(action="frontmatter_set") to bump `updated` and tags.
+   c. If not found → vault(action="create", path=..., content=...) a new note.
+   d. Never create duplicate notes. Always check first.
+
+3. GATHER INFORMATION ABOUT THE USER (everything). The user is the owner of this environment.
+   Proactively collect and store, in dedicated notes (e.g. `user/profile.md`, `user/preferences.md`,
+   `user/environment.md`), ALL of the following whenever they appear:
+   - Identity: name, aliases, handles, email, phone, timezone, language(s), location
+   - Preferences: communication style, output format, verbosity, tools they like/dislike
+   - Work: projects, goals, deadlines, roles, collaborators, organizations
+   - Environment: OS, machines, IPs, MACs, hostnames, SSH creds, ports, paths, installed tools
+   - Accounts/services: logins (never store plaintext passwords unless the user explicitly asks;
+     prefer describing where/how to retrieve them), API endpoints, tokens references
+   - Habits/routines: how they wake/sleep machines, backup habits, naming conventions
+   - Decisions and rationale: why something was chosen, what was rejected and why
+   - Problems and fixes: errors encountered, root causes, solutions that worked
+   - Relationships between facts (link notes with relative paths / backlinks)
+   Whenever the user mentions even a tiny personal detail, save it. Ask clarifying questions
+   when a detail is ambiguous, then save the answer.
+
+4. NAMING & ORGANIZATION:
+   - Files: kebab-case.md, 2-5 words, no prefixes (e.g. `super-pc-ssh-wol.md`).
+   - Directories: kebab-case/ (e.g. `infrastructure/`, `user/`, `projects/`, `decisions/`).
+   - Frontmatter: title, tags (lowercase hyphenated, hierarchical via `/`), type (note|reference|log|template),
+     created, updated, status (draft|in_progress|done).
+   - Use tags like `user`, `infra`, `ssh`, `wol`, `project`, `decision`, `fix`, `credential-ref`.
+
+5. EDITING SAFETY:
+   - Prefer edit() with dryRun=true before destructive operations (delete, replace, string_replace).
+   - Use edit(action="append") for adding new info to an existing section.
+   - Use edit(action="string_replace") for precise small fixes.
+   - Use edit(operations=[...]) for multi-file updates.
+   - Never delete a note unless it is clearly outdated/wrong; prefer updating.
+
+6. SEARCH STRATEGY:
+   - Conceptual/fuzzy → semantic_search
+   - Exact phrases/regex → global_search
+   - Keyword/heading → search
+   - Read structure first with outline when unsure of headings.
+   - Read multiple files at once with bulk_read.
+   - Find incoming links with backlinks.
+
+7. CROSS-AGENT SHARING:
+   - The vault is shared across ALL agents and sessions. What you save, others can read.
+   - Write notes so any agent can understand them without extra context: include full commands,
+     full paths, full IPs, full reasoning. No "see above" / "as discussed".
+   - When you finish a task, save a short log note (type: log) summarizing what was done,
+     what changed, and any follow-ups. Future agents (and you) will rely on it.
+
+8. KEEP IT CURRENT:
+   - If you find outdated info, fix it (edit) or delete and recreate.
+   - Reindex (system action="reindex") after large structural changes if search seems stale.
+   - Update `updated` frontmatter on every edit.
+
+9. DO NOT DUPLICATE THE CONVERSATION:
+   - The vault stores facts, not chat transcripts. Distill: keep commands, values, decisions,
+     not pleasantries. Be concise and structured (headings, bullets, code blocks).
+
+10. VERIFICATION:
+    - After creating/updating a note, read it back (view read) to confirm it saved correctly.
+    - A final answer should reflect vault-backed facts, not guesses.
+
+=== SUMMARY ===
+
+- Search the vault BEFORE every answer/task.
+- Save EVERY new fact (especially about the user) AFTER learning it.
+- Check for existing notes before creating; update instead of duplicating.
+- Write self-contained, structured, current notes shared across all agents.
+- The vault is the team's memory. Use it 100%, always.

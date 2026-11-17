@@ -1,0 +1,10 @@
+# multiollama_mcp — standalone MCP server requirements
+#
+# Needed ONLY on the machine that runs this MCP server process (your
+# MCP client app spawns it). The multiollama backend keeps its own
+# requirements.txt — the two share nothing but HTTP.
+#
+# Python >= 3.10 (required by the official MCP SDK).
+
+mcp>=1.2            # official Model Context Protocol SDK (FastMCP server)
+httpx>=0.27         # async HTTP client that talks to the backend

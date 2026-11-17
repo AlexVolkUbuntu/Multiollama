@@ -1,0 +1,12 @@
+Base info about agent settings:
+max context messages - is how many messages from main chat agent can see always. 
+- set 20-30 is best for agent with long context size (>128K)
+- set 8-20 for agents with small context size (<128K)
+- set 0 for specialist that are non-active
+silent on/off - is does agent answer translated to main chat
+- set on for particular or non tools usage agents
+- set off for non-active specialist - that has strict job or answer by tools only
+active on/off - 
+- set on if need agent to be always called in queue
+- set off to use agent as direct call from tools (core_agent_execute_* ) - for example only call agent if pending job for agent exists - skip agent when no job for agent exists
+- best used for strict specialist

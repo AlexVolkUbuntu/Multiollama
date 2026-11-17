@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MultiOllama Console</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231b2330'/%3E%3Ctext x='16' y='22' font-size='16' text-anchor='middle' font-family='sans-serif' fill='%237dd3fc'%3EM%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0f141b; --panel:#161d27; --panel2:#1c2532; --border:#2a3646;
+  --text:#d7e0ea; --muted:#8494a7; --accent:#7dd3fc;
+  --green:#4ade80; --red:#f87171; --yellow:#fbbf24; --orange:#fb923c;
+  --cyan:#22d3ee; --purple:#c084fc; --pink:#f472b6; --teal:#2dd4bf;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex;flex-direction:column;overflow:hidden}
+button{cursor:pointer}
+input,select,textarea{background:var(--panel2);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:6px 9px;font:inherit}
+input:focus,select:focus,textarea:focus{outline:1px solid var(--accent)}
+textarea{resize:vertical;min-height:64px;font-family:var(--mono);font-size:12.5px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#2a3646;border-radius:5px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- header ---------- */
+header{display:flex;align-items:center;gap:14px;padding:8px 14px;
+  background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap}
+.brand{font-weight:700;font-size:15px;letter-spacing:.3px;white-space:nowrap}
+.brand small{color:var(--muted);font-weight:400;margin-left:6px}
+.conn{display:flex;gap:8px;align-items:center;flex:1;min-width:340px;flex-wrap:wrap}
+.conn input#base{width:210px}
+.conn input#apikey{width:150px}
+.dot{width:11px;height:11px;border-radius:50%;background:#556;flex:none;
+  box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+.dot.on{background:var(--green);box-shadow:0 0 8px var(--green)}
+.dot.connecting{background:var(--yellow);animation:pulse 1s infinite}
+.dot.off{background:var(--red)}
+@keyframes pulse{50%{opacity:.35}}
+.btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:6px 13px;font:inherit;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:#0e3a54;border-color:#1d5a7a;color:var(--accent)}
+.btn.primary:hover{background:#12506f}
+.btn.danger{border-color:#5b2626}
+.btn.danger:hover{border-color:var(--red);color:var(--red)}
+.btn.small{padding:2px 8px;font-size:12px;border-radius:5px}
+
+/* ---------- status strip ---------- */
+#statusbar{display:flex;gap:10px;align-items:center;padding:5px 14px;
+  background:var(--panel);border-bottom:1px solid var(--border);
+  font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--panel2);
+  border:1px solid var(--border);border-radius:20px;padding:2px 11px;color:var(--text)}
+.chip b{color:var(--accent);font-weight:600}
+.chip .swatch{width:8px;height:8px;border-radius:50%;flex:none}
+
+/* ---------- tabs ---------- */
+nav#tabs{display:flex;gap:2px;padding:0 10px;background:var(--panel);
+  border-bottom:1px solid var(--border);overflow-x:auto}
+nav#tabs button{background:none;border:none;color:var(--muted);padding:9px 14px;
+  font:inherit;font-size:13.5px;border-bottom:2px solid transparent;white-space:nowrap}
+nav#tabs button:hover{color:var(--text)}
+nav#tabs button.active{color:var(--accent);border-bottom-color:var(--accent)}
+nav#tabs button .n{background:var(--panel2);border-radius:9px;font-size:11px;
+  padding:0 6px;margin-left:5px;color:var(--yellow)}
+
+main{flex:1;overflow:hidden;position:relative}
+.tabpane{display:none;height:100%;overflow:auto;padding:14px}
+.tabpane.active{display:block}
+.tabpane.col{max-width:1100px;margin:0 auto}
+
+/* ---------- cards & tables ---------- */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--muted)}
+.card h3 .right{float:right;text-transform:none;letter-spacing:0}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+table.tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;
+  padding:6px 8px;border-bottom:1px solid var(--border)}
+table.tbl td{padding:7px 8px;border-bottom:1px solid #222d3c;vertical-align:top}
+table.tbl tr:last-child td{border-bottom:none}
+table.tbl td.actions{text-align:right;white-space:nowrap}
+table.tbl tr.running-row td{background:rgba(125,211,252,.05)}
+.mono{font-family:var(--mono);font-size:12px}
+.muted{color:var(--muted)}
+.ok{color:var(--green)} .bad{color:var(--red)} .warn{color:var(--yellow)}
+.badge{display:inline-block;border-radius:4px;padding:1px 7px;font-size:11px;
+  font-family:var(--mono);border:1px solid var(--border);color:var(--muted);
+  margin-right:3px;white-space:nowrap}
+.badge.on{color:var(--green);border-color:#2e5b41}
+.badge.off{color:var(--muted)}
+.badge.run{color:var(--cyan);border-color:#1d5a7a}
+.badge.silent{color:var(--purple);border-color:#4c3a6b}
+.badge.err{color:var(--red);border-color:#5b2626}
+.banner{background:#2a2313;border:1px solid #6b5a1e;color:var(--yellow);
+  border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.banner code{font-family:var(--mono);background:rgba(0,0,0,.3);padding:1px 6px;border-radius:4px}
+
+/* ---------- forms ---------- */
+form.frm{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:10px 14px;align-items:start}
+form.frm .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+label.f input,label.f select,label.f textarea{font-size:13px}
+label.f .hint{font-size:11px;color:#5c6b7d}
+.checks{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--text);
+  align-items:center;padding-top:14px}
+.checks label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.formrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+
+/* ---------- console ---------- */
+#console{font-family:var(--mono);font-size:12px;background:#0b0f15;
+  border:1px solid var(--border);border-radius:8px;height:calc(100% - 46px);
+  overflow-y:auto;padding:8px 10px}
+.ln{display:flex;gap:8px;padding:1px 0;align-items:baseline;min-width:0}
+.ln .ts{color:#546070;flex:none;font-size:11px}
+.ln .b{flex:none;font-size:10.5px;border-radius:3px;padding:0 5px;min-width:52px;
+  text-align:center;align-self:center}
+.ln .ag{color:var(--accent);flex:none;max-width:150px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.ln .tx{white-space:pre-wrap;word-break:break-word;min-width:0;flex:1;
+  overflow:hidden;max-height:78px}
+.ln .tx.expanded{max-height:none}
+.ln.clickable{cursor:pointer}
+.t-chat .b{background:#12331f;color:var(--green)}   .t-chat .tx{color:#b8e6c8}
+.t-think .b{background:#123339;color:var(--cyan)}   .t-think .tx{color:#9fd8e4}
+.t-tool .b{background:#332a12;color:var(--yellow)}  .t-tool .tx{color:#e6d9a8}
+.t-status .b{background:#1c2740;color:#9ab4e8}      .t-status .tx{color:#8fa3c8}
+.t-life .b{background:#301f33;color:var(--pink)}    .t-life .tx{color:#e0bcd4}
+.t-sys .b{background:#20262e;color:var(--muted)}    .t-sys .tx{color:var(--muted)}
+.t-err .b{background:#3a1616;color:var(--red)}      .t-err .tx{color:#f3b0b0}
+.consolebar{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.fchip{border:1px solid var(--border);background:var(--panel2);color:var(--muted);
+  border-radius:14px;font-size:11.5px;padding:2px 10px}
+.fchip.on{color:var(--accent);border-color:#1d5a7a;background:#0e3a54}
+.fchip .n{margin-left:4px;color:var(--yellow)}
+.spacer{flex:1}
+
+/* ---------- chat ---------- */
+#chatlog{display:flex;flex-direction:column;gap:10px;max-width:900px;margin:0 auto}
+.msg{border:1px solid var(--border);border-radius:10px;background:var(--panel);
+  padding:8px 12px;max-width:88%}
+.msg .who{font-size:11.5px;color:var(--muted);margin-bottom:4px;display:flex;gap:8px}
+.msg .who .role{font-family:var(--mono)}
+.msg .body{white-space:pre-wrap;word-break:break-word;font-size:13.5px}
+.msg.user{align-self:flex-end;border-color:#1d5a7a;background:#12222e}
+.msg.user .who{color:var(--accent)}
+.msg.assistant{align-self:flex-start}
+.msg.assistant .who{color:var(--green)}
+.msg.system{align-self:center;background:none;border-style:dashed;color:var(--muted);
+  max-width:96%}
+.msg.system .body{color:var(--muted);font-size:12.5px}
+.msg.error{align-self:flex-start;border-color:#5b2626;background:#241414}
+.msg.error .who{color:var(--red)}
+
+/* ---------- chat: download links for files the message mentions ---------- */
+.msg .msgfiles{margin-top:8px;padding-top:7px;border-top:1px dashed var(--border);
+  display:flex;flex-direction:column;gap:4px}
+.msg .msgfiles .flabel{font-size:10.5px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.08em;margin-bottom:1px}
+.msg .msgfiles a.dl{display:flex;gap:7px;align-items:baseline;font-size:12.5px;
+  color:var(--accent);text-decoration:none;font-family:var(--mono);
+  width:fit-content}
+.msg .msgfiles a.dl:hover{text-decoration:underline;color:var(--cyan)}
+.msg .msgfiles a.dl .fi{flex:none;font-size:12px}
+.msg .msgfiles a.dl .fname{word-break:break-all}
+.msg .msgfiles a.dl .fsize{color:var(--muted);font-size:10.5px;flex:none}
+.msg .msgfiles a.dl .fdl{flex:none;color:var(--muted);font-size:10px}
+#chatbox{max-width:900px;margin:12px auto 0;display:flex;gap:8px;flex-wrap:wrap}
+#chatbox textarea{flex:1;min-height:44px;max-height:200px}
+
+/* ---------- state tab ---------- */
+#statejson{font-family:var(--mono);font-size:12px;white-space:pre; color:#b7c5d4;
+  background:#0b0f15;border:1px solid var(--border);border-radius:8px;
+  padding:12px;overflow:auto}
+#statejson .k{color:var(--accent)} #statejson .s{color:var(--green)}
+#statejson .n{color:var(--orange)} #statejson .b{color:var(--purple)}
+
+/* ---------- side picker (names / tools / prompts / mcp) ---------- */
+.sidebox{position:fixed;z-index:1000;width:340px;max-width:94vw;max-height:64vh;
+  display:flex;flex-direction:column;background:var(--panel);
+  border:1px solid #1d5a7a;border-radius:10px;box-shadow:0 12px 36px rgba(0,0,0,.65);
+  overflow:hidden;font-size:13px}
+.sidebox .sb-head{display:flex;align-items:center;gap:8px;padding:8px 10px;
+  background:var(--panel2);border-bottom:1px solid var(--border)}
+.sidebox .sb-head b{color:var(--accent);font-size:12.5px;letter-spacing:.3px;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebox .sb-head .sb-sub{color:var(--muted);font-size:10.5px;white-space:nowrap}
+.sidebox .sb-x{background:none;border:none;color:var(--muted);font-size:15px;
+  padding:0 4px;cursor:pointer;line-height:1}
+.sidebox .sb-x:hover{color:var(--red)}
+.sidebox .sb-filter{padding:8px 10px 4px}
+.sidebox .sb-filter input{width:100%;font-size:12.5px;padding:5px 8px}
+.sidebox .sb-list{overflow:auto;padding:6px 8px;flex:1;min-height:80px}
+.sidebox .sb-foot{display:flex;align-items:center;gap:8px;padding:8px 10px;
+  border-top:1px solid var(--border);background:var(--panel2)}
+.sidebox .sb-foot .cnt{color:var(--muted);font-size:11.5px;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-item{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;
+  cursor:pointer;user-select:none}
+.sb-item:hover{background:var(--panel2)}
+.sb-item.sel{background:#0e3a54}
+.sb-item.disabled{opacity:.42;cursor:not-allowed}
+.sb-item .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-item .hint2{color:var(--muted);font-size:11px;max-width:170px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.sb-item .tag{font-size:10px;color:var(--muted);border:1px solid var(--border);
+  border-radius:8px;padding:0 6px;white-space:nowrap}
+.sb-item input[type=checkbox]{flex:none;margin:0;accent-color:#1d5a7a}
+.sb-empty{color:var(--muted);padding:10px 12px;font-size:12px}
+/* tree (tools picker) */
+.sb-node{margin:1px 0}
+.sb-arrow{width:13px;flex:none;color:var(--muted);font-size:9px;
+  transition:transform .12s;display:inline-block}
+.sb-node.open .sb-arrow{transform:rotate(90deg);color:var(--accent)}
+.sb-node > .sb-item b.file{font-weight:600;flex:1;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;text-align:left}
+.sb-kids{display:none;padding-left:15px;border-left:1px solid #222d3c;margin-left:6px}
+.sb-node.open > .sb-kids{display:block}
+/* sessions backups roll-down */
+select.backups{max-width:250px;font-size:11.5px;padding:3px 6px}
+
+/* ---------- modal ---------- */
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--border);
+  border-radius:12px;padding:18px 20px;width:min(680px,94vw);max-height:88vh;
+  overflow:auto}
+dialog::backdrop{background:rgba(5,8,12,.65)}
+dialog h3{margin:0 0 14px;color:var(--accent)}
+.adv{margin-top:10px}
+.adv summary{cursor:pointer;color:var(--muted);font-size:12.5px}
+.adv .inner{padding-top:10px}
+
+/* ---------- toasts ---------- */
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;
+  gap:8px;z-index:99;max-width:420px}
+.toast{background:var(--panel2);border:1px solid var(--border);border-left:4px solid var(--accent);
+  border-radius:8px;padding:9px 13px;font-size:12.5px;box-shadow:0 4px 18px rgba(0,0,0,.5);
+  animation:slidein .18s ease-out}
+.toast.error{border-left-color:var(--red)}
+.toast.success{border-left-color:var(--green)}
+@keyframes slidein{from{transform:translateX(30px);opacity:0}}
+footer{padding:5px 14px;background:var(--panel);border-top:1px solid var(--border);
+  color:#5c6b7d;font-size:11.5px;display:flex;gap:16px;flex-wrap:wrap}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--accent)}
+@media(max-width:760px){ .conn{min-width:0} .conn input#base{width:150px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">MultiOllama<small>backend console</small></div>
+  <div class="conn">
+    <input id="base" title="Backend base URL" placeholder="http://127.0.0.1:8200">
+    <input id="apikey" type="password" title="ML_API_KEY value (leave empty if unset)"
+           placeholder="API key (if set)">
+    <button class="btn primary" id="connectbtn">Connect</button>
+    <button class="btn small" id="refreshbtn" title="GET /state + WS refresh">↻ Refresh</button>
+    <span class="dot off" id="wsdot" title="WebSocket /ws/output"></span>
+  </div>
+</header>
+
+<div id="statusbar"></div>
+
+<nav id="tabs">
+  <button data-tab="console" class="active">Console</button>
+  <button data-tab="chat">Chat</button>
+  <button data-tab="agents">Agents</button>
+  <button data-tab="sessions">Sessions</button>
+  <button data-tab="queue">Queue <span class="n" id="qn"></span></button>
+  <button data-tab="inject">Inject</button>
+  <button data-tab="state">State</button>
+</nav>
+
+<main>
+
+  <!-- ============ CONSOLE ============ -->
+  <section class="tabpane active" id="tab-console">
+    <div class="consolebar">
+      <button class="fchip on" data-cat="chat">chat<span class="n"></span></button>
+      <button class="fchip on" data-cat="think">thinking<span class="n"></span></button>
+      <button class="fchip on" data-cat="tool">tools<span class="n"></span></button>
+      <button class="fchip on" data-cat="status">status<span class="n"></span></button>
+      <button class="fchip on" data-cat="life">lifecycle<span class="n"></span></button>
+      <button class="fchip on" data-cat="err">errors<span class="n"></span></button>
+      <button class="fchip on" data-cat="sys">system<span class="n"></span></button>
+      <span class="spacer"></span>
+      <label class="fchip" style="cursor:pointer"><input type="checkbox" id="autoscroll" checked> auto-scroll</label>
+      <button class="btn small" id="clearlog">Clear</button>
+    </div>
+    <div id="console"></div>
+  </section>
+
+  <!-- ============ CHAT ============ -->
+  <section class="tabpane" id="tab-chat">
+    <div id="nochat" class="banner" style="max-width:900px;margin:0 auto 12px">
+      No active session — create one first:
+      <code>POST /control/session/new</code>
+      <button class="btn small" id="quicknewsess" style="margin-left:8px">Create session now</button>
+    </div>
+    <div id="chatlog"></div>
+    <div id="chatbox">
+      <textarea id="msgtext" placeholder="Message to the active session… (Enter=queue, Ctrl+Enter=send now)"></textarea>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="btn" id="sendqueue" title="POST /control/message {mode:'queue'}">To queue</button>
+        <button class="btn primary" id="sendnow" title="POST /control/message {mode:'send_now'}">Send now</button>
+      </div>
+    </div>
+    <div style="max-width:900px;margin:10px auto 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <label class="f" style="flex-direction:row;align-items:center;gap:6px">
+        <span>User name</span><input id="username" style="width:110px" placeholder="User">
+        <button class="btn small" id="setuser">Set</button>
+      </label>
+      <label style="display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer"
+             title="When checked, the session WAITS for your message (or 'Send Now') before the agents run. New and loaded sessions start with this ON.">
+        <input type="checkbox" id="pauseinput"> Wait user input
+        <button class="btn small" id="sendnowbtn2" title="POST /control/send-now">Send Now</button>
+      </label>
+      <label class="f" style="flex-direction:row;align-items:center;gap:6px">
+        <span>Attach file</span><input id="attachpath" style="width:200px" placeholder="/path/to/file">
+        <button class="btn small" id="attachbtn">Add</button>
+      </label>
+      <span class="spacer"></span>
+      <button class="btn small" id="reloadchat">↻ Reload history</button>
+    </div>
+    <div id="pendingbox" style="max-width:900px;margin:10px auto 0"></div>
+  </section>
+
+  <!-- ============ AGENTS ============ -->
+  <section class="tabpane col" id="tab-agents">
+    <div id="noagents" class="banner">
+      No active session — agents live <b>inside</b> a session. Create or load one
+      first (<code>POST /control/session/new</code> / <code>/control/session/load</code>),
+      then agents appear here.
+      <button class="btn small" id="quicknewsess2" style="margin-left:8px">Create session now</button>
+    </div>
+    <div class="card" id="agentscard">
+      <h3>Agents of the active session
+        <span class="right"><button class="btn small primary" id="newagent">+ New agent</button></span>
+      </h3>
+      <table class="tbl" id="agentstbl">
+        <thead><tr><th>Agent</th><th>Model / endpoint</th><th>Flags</th><th>Tools</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ SESSIONS ============ -->
+  <section class="tabpane col" id="tab-sessions">
+    <div class="card">
+      <h3>New session <span class="right muted">POST /control/session/new</span></h3>
+      <form class="frm" id="newsessform">
+        <label class="f">Name <input name="name" placeholder="empty = session&lt;N&gt;"></label>
+        <label class="f">User name <input name="user_name" value="User"></label>
+        <div class="formrow"><button class="btn primary" type="submit">Create</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Load session from file <span class="right muted">POST /control/session/load</span></h3>
+      <form class="frm" id="loadsessform">
+        <label class="f full">Absolute path to a session JSON
+          <input name="path" placeholder="/home/…/MultiOllama_backend/sessions/team.json" required>
+        </label>
+        <div class="formrow"><button class="btn primary" type="submit">Load</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Sessions on disk
+        <span class="right muted">one row per session — newest save shown; roll down “Backups” for older ones</span>
+      </h3>
+      <table class="tbl" id="sessionsdisk">
+        <thead><tr><th>Name</th><th>Backups</th><th>Agents</th><th>Msgs</th><th>Saved</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ QUEUE ============ -->
+  <section class="tabpane col" id="tab-queue">
+    <div class="card" id="activecard">
+      <h3>Active session</h3><div id="activebody" class="muted">—</div>
+    </div>
+    <div class="card">
+      <h3>Enqueue a session run
+        <span class="right muted">POST /queue/sessions — loads newest autosave, runs, autosaves</span>
+      </h3>
+      <form class="frm" id="enqueueform">
+        <label class="f">Session name *
+          <input name="session_name" id="enqname" list="sessionnames" required placeholder="team-alpha">
+        </label>
+        <label class="f">Message to send before it
+          <input name="message" placeholder="continue with the plan">
+        </label>
+        <label class="f">Sender <input name="sender" value="user"></label>
+        <label class="f">Idle timeout (s, optional) <input name="idle_timeout" placeholder="leave empty = default"></label>
+        <label class="f">Activate agents (comma list) <input name="activate" placeholder="alpha,beta"></label>
+        <div class="checks full">
+          <label><input type="checkbox" name="activate_all"> activate all</label>
+          <label><input type="checkbox" name="auto_finish" checked> auto-finish</label>
+        </div>
+        <div class="formrow"><button class="btn primary" type="submit">Add to queue</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Pending queue
+        <span class="right"><button class="btn small danger" id="clearqueue">Clear all</button></span>
+      </h3>
+      <table class="tbl" id="pendingtbl">
+        <thead><tr><th>#</th><th>Session</th><th>Message</th><th>Options</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="muted" id="pendingempty">Queue is empty — the backend waits for entries.</div>
+    </div>
+    <div class="card">
+      <h3>Recently finished</h3>
+      <table class="tbl" id="recenttbl">
+        <thead><tr><th>Session</th><th>Status</th><th>Result</th><th>Finished</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ INJECT ============ -->
+  <section class="tabpane col" id="tab-inject">
+    <div class="card">
+      <h3>Inject into next tool output
+        <span class="right muted">POST /queue/inject — never enqueues the session</span>
+      </h3>
+      <form class="frm" id="injectform">
+        <label class="f">Session name *
+          <input name="session_name" id="injsess" list="sessionnames" required placeholder="team-alpha">
+        </label>
+        <label class="f">Agent name *
+          <input name="agent_name" id="injagent" list="agentnames" required placeholder="alpha">
+        </label>
+        <label class="f full">Message (prepended to that agent's NEXT tool result)
+          <textarea name="text" required placeholder="check the results and continue"></textarea>
+        </label>
+        <div class="formrow"><button class="btn primary" type="submit">Inject</button></div>
+      </form>
+      <div class="muted" style="margin-top:8px">If the session is running → delivered live now.
+        Otherwise staged and delivered automatically on its next run.</div>
+    </div>
+    <div class="card">
+      <h3>Staged injections</h3>
+      <table class="tbl" id="stagedtbl">
+        <thead><tr><th>Session</th><th>Agent</th><th>Text</th><th>Staged at</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="muted" id="stagedempty">Nothing staged.</div>
+    </div>
+    <div class="card">
+      <h3>Live injection counts (in the tool_injection buffer)</h3>
+      <div id="liveinj" class="muted">—</div>
+    </div>
+  </section>
+
+  <!-- ============ STATE ============ -->
+  <section class="tabpane" id="tab-state">
+    <div class="consolebar">
+      <button class="btn small" id="statefresh">↻ GET /state</button>
+      <label class="fchip" style="cursor:pointer"><input type="checkbox" id="stateauto"> auto every 5 s</label>
+      <span class="muted" id="statewhen"></span>
+    </div>
+    <div id="statejson"></div>
+  </section>
+
+</main>
+
+<footer>
+  <span>REST: <code>/control/*</code>, <code>/queue/*</code>, <code>/state</code></span>
+  <span>WS: <code>/ws/output</code></span>
+  <span>SSE: <code>/output/stream</code></span>
+  <a href="/docs" target="_blank">OpenAPI /docs</a>
+  <a href="/info" target="_blank">/info</a>
+  <span>Full guide: <code>API_GUIDE.md</code> in the backend folder</span>
+</footer>
+
+<div id="toasts"></div>
+
+<!-- ============ AGENT MODAL ============ -->
+<dialog id="agentdlg">
+  <h3 id="agentdlgtitle">New agent</h3>
+  <form class="frm" id="agentform">
+    <label class="f">Name *
+      <span style="display:flex;gap:6px;align-items:center">
+        <input name="name" required placeholder="alpha" style="flex:1;min-width:0">
+        <button type="button" class="btn small" id="picknames"
+          title="Pick a name from names.txt (single selection). New agents are pre-filled with a random unused name from it.">names ▾</button>
+      </span>
+    </label>
+    <label class="f">Endpoint <input name="endpoint" value="local" list="epnames" placeholder="local or ip:port"></label>
+    <label class="f">Model <input name="model" value="qwen3.5:9b" list="modellist" placeholder="qwen3.5:9b">
+      <span class="hint"><button type="button" class="btn small" id="loadmodels">load models for endpoint</button></span>
+    </label>
+    <label class="f">Temperature <input name="temperature" type="number" step="0.1" min="0" max="2" value="0.5"></label>
+    <label class="f full">System prompt <textarea name="system_prompt" rows="4" placeholder="You are …"></textarea></label>
+    <label class="f full">Description <input name="description" placeholder="(optional)"></label>
+    <details class="adv full"><summary>Advanced</summary><div class="inner">
+      <div class="frm" style="padding:0">
+        <label class="f">num_ctx <input name="num_ctx" type="number" value="32000"></label>
+        <label class="f">max_context_messages <input name="max_context_messages" type="number" value="30"></label>
+        <label class="f">max_tool_iterations <input name="max_tool_iterations" type="number" value="1000"></label>
+        <label class="f full">Tools (comma-separated)
+          <span style="display:flex;gap:6px;align-items:center">
+            <input name="tools" list="toolnames" placeholder="core_file_write, core_execute_command" style="flex:1;min-width:0">
+            <button type="button" class="btn small" id="picktools"
+              title="Tree multi-selection: tool files expand to the tools inside them">tools ▾</button>
+          </span>
+          <span class="hint">pick with the tree button · full list: State tab → tools</span>
+        </label>
+        <label class="f full">Prompts (comma-separated)
+          <span style="display:flex;gap:6px;align-items:center">
+            <input name="prompts" list="promptnames" placeholder="" style="flex:1;min-width:0">
+            <button type="button" class="btn small" id="pickprompts"
+              title="Multi-select prompt snippets from prompts/">prompts ▾</button>
+          </span>
+        </label>
+        <label class="f full">MCP servers (comma-separated)
+          <span style="display:flex;gap:6px;align-items:center">
+            <input name="mcp_servers" placeholder="" style="flex:1;min-width:0">
+            <button type="button" class="btn small" id="pickmcp"
+              title="Multi-select MCP servers from the registry">mcp ▾</button>
+          </span>
+        </label>
+        <div class="checks full">
+          <label><input type="checkbox" name="active" checked> active</label>
+          <label><input type="checkbox" name="silent"> silent</label>
+          <label><input type="checkbox" name="use_tools" checked> use tools</label>
+          <label><input type="checkbox" name="image"> image</label>
+          <label><input type="checkbox" name="audio"> audio</label>
+          <label><input type="checkbox" name="mcp"> mcp</label>
+        </div>
+      </div>
+    </div></details>
+    <div class="formrow full">
+      <button class="btn primary" type="submit" id="agentformsave">Save</button>
+      <button class="btn" type="button" onclick="document.getElementById('agentdlg').close()">Cancel</button>
+      <span class="muted" id="agentfrmhint"></span>
+    </div>
+  </form>
+</dialog>
+
+<datalist id="sessionnames"></datalist>
+<datalist id="agentnames"></datalist>
+<datalist id="toolnames"></datalist>
+<datalist id="promptnames"></datalist>
+<datalist id="epnames"></datalist>
+<datalist id="modellist"></datalist>
+
+<script>
+"use strict";
+/* =====================================================================
+   MultiOllama web console — talks to the backend's own API:
+     REST  {base}/control/*  {base}/queue/*  {base}/state
+     WS    {base}/ws/output?token=…      (snapshot + live events)
+   No build step, no dependencies; served by the backend at GET /.
+   ===================================================================== */
+
+const $  = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+const S = {
+  base: "", key: "",
+  ws: null, wsRetry: 0, wsTimer: null, wsOpen: false,
+  state: null, snapshotAt: 0,
+  chatSession: null,           // session name currently rendered in Chat
+  editingAgent: null,          // null = create mode
+  filters: new Set(["chat","think","tool","status","life","err","sys"]),
+  counts: {chat:0,think:0,tool:0,status:0,life:0,err:0,sys:0},
+  paused: false, hiddenCount: 0,
+  lastLine: null,              // streaming aggregation target
+  refreshTimer: null, refreshInFlight: false,
+  stateAutoTimer: null,
+  picker: null,                // the open side picker (names/tools/prompts/mcp)
+  sessSel: {},                // sessions tab: chosen backup file per session name
+};
+
+/* ---------------- storage & init ---------------- */
+function defaultBase() {
+  if (location.protocol.startsWith("http")) return location.origin;
+  return "http://127.0.0.1:8200";
+}
+function loadSettings() {
+  S.base = localStorage.getItem("ml.base") || defaultBase();
+  S.key  = localStorage.getItem("ml.key") || "";
+  $("#base").value = S.base;
+  $("#apikey").value = S.key;
+}
+function saveSettings() {
+  localStorage.setItem("ml.base", S.base);
+  localStorage.setItem("ml.key", S.key);
+}
+
+/* ---------------- toasts ---------------- */
+function toast(msg, kind = "info", ms = 3800) {
+  const el = document.createElement("div");
+  el.className = "toast " + kind;
+  el.textContent = msg;
+  $("#toasts").appendChild(el);
+  setTimeout(() => el.remove(), ms);
+}
+
+/* ---------------- API helper ---------------- */
+async function api(method, path, body) {
+  const url = S.base.replace(/\/+$/, "") + path;
+  const headers = {};
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (S.key) headers["X-API-Key"] = S.key;
+  let resp;
+  try {
+    resp = await fetch(url, {
+      method, headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch (e) {
+    toast(`Network error — is the backend running at ${S.base}? (${e.message})`, "error", 6000);
+    throw e;
+  }
+  let data = null;
+  try { data = await resp.json(); } catch (e) { /* non-JSON */ }
+  if (!resp.ok) {
+    const detail = data && data.detail ? data.detail : resp.statusText;
+    toast(`${method} ${path} → ${resp.status}: ${detail}`, "error", 6000);
+    const err = new Error(detail);
+    err.status = resp.status; err.detail = detail;
+    throw err;
+  }
+  return data;
+}
+
+/* ---------------- connect ---------------- */
+async function connect() {
+  S.base = $("#base").value.trim() || defaultBase();
+  S.key = $("#apikey").value;
+  saveSettings();
+  setDot("connecting");
+  try {
+    const st = await api("GET", "/state");
+    S.state = st; S.snapshotAt = Date.now();
+    renderAll();
+    openWS();
+  } catch (e) {
+    setDot("off");
+  }
+}
+
+function wsUrl() {
+  const u = new URL(S.base);
+  const proto = u.protocol === "https:" ? "wss" : "ws";
+  return `${proto}://${u.host}/ws/output?token=${encodeURIComponent(S.key)}`;
+}
+
+function openWS() {
+  if (S.ws) { try { S.ws.onclose = null; S.ws.close(); } catch (e) {} S.ws = null; }
+  let ws;
+  try { ws = new WebSocket(wsUrl()); } catch (e) { scheduleReconnect(); return; }
+  S.ws = ws;
+  ws.onopen = () => { S.wsOpen = true; S.wsRetry = 0; setDot("on"); };
+  ws.onmessage = (m) => {
+    try { handleEvent(JSON.parse(m.data)); } catch (e) {}
+  };
+  ws.onclose = (e) => {
+    S.wsOpen = false; setDot("off");
+    if (e && e.code === 4401) { toast("WebSocket auth failed — set the API key", "error"); return; }
+    scheduleReconnect();
+  };
+  ws.onerror = () => {};
+}
+function scheduleReconnect() {
+  if (S.wsTimer) return;
+  const delay = Math.min(10000, 800 * Math.pow(1.6, S.wsRetry++));
+  S.wsTimer = setTimeout(() => { S.wsTimer = null; openWS(); }, delay);
+}
+function setDot(cls) { $("#wsdot").className = "dot " + cls; }
+
+/* ---------------- event handling ---------------- */
+function handleEvent(evt) {
+  const d = evt.data || {};
+  switch (evt.type) {
+    case "snapshot":
+      S.state = d; S.snapshotAt = Date.now();
+      renderAll();
+      logLine("sys", "", "snapshot received (" + new Date(evt.ts * 1000).toLocaleTimeString() + ")");
+      break;
+    case "chat":
+      onChatEvent(d, evt.ts);
+      if (d.sender === "Error") logLine("err", d.sender || "", d.text || "");
+      else logLine("chat", d.sender || "", d.text || "", d.display_only ? " (display only)" : "");
+      break;
+    case "thinking":
+      onThinkingEvent(d);
+      break;
+    case "status":
+      logLine("status", d.endpoint || "", `${d.text || ""}${d.color ? "  [" + d.color + "]" : ""}`);
+      scheduleRefresh();
+      break;
+    case "agent_status":
+      logLine("status", d.agent || "", `${d.running ? "▶ running" : "■ idle"}${d.model ? " (" + d.model + ")" : ""} @ ${d.endpoint || ""}`);
+      scheduleRefresh();
+      break;
+    case "session": {
+      const bits = [];
+      for (const k of ["event", "session_name", "source", "reason", "result", "autosave_path"])
+        if (d[k] !== undefined) bits.push(`${k}=${d[k]}`);
+      logLine("life", "", "session " + bits.join("  "));
+      scheduleRefresh();
+      reloadChatIfSessionChanged();
+      break;
+    }
+    case "agents_changed":
+      logLine("life", "", "agents changed: " + (d.agents || []).join(", "));
+      scheduleRefresh();
+      break;
+    case "queue_updated":
+      renderPendingUser(d.pending_user_messages || []);
+      scheduleRefresh();
+      break;
+    case "injection": {
+      const live = d.live || d.delivered_to_buffer;
+      logLine("life", d.agent_name || "", `injection ${live ? "LIVE" : "staged"} for session '${d.session_name || ""}'${d.text ? ": " + String(d.text).slice(0, 120) : ""}`);
+      scheduleRefresh();
+      break;
+    }
+    case "log":
+      logLine("sys", "", d.text || "");
+      break;
+    case "ping": case "pong":
+      break;
+    default:
+      logLine("sys", "", JSON.stringify(evt));
+  }
+}
+
+function onThinkingEvent(d) {
+  const et = d.event_type || "";
+  const cat = (et === "tool_call" || et === "tool_result") ? "tool" : "think";
+  let text = d.detail || "";
+  if (d.extra) text += "  " + (typeof d.extra === "string" ? d.extra : JSON.stringify(d.extra));
+  if (et === "prompt" || et === "tool_result" || et === "tool_call") {
+    logLine(cat, d.agent || "", `[${et}] ` + text, undefined, true);   // clickable expand
+  } else if (et === "stream" || et === "thinking") {
+    logStream(cat, d.agent || "", et, text);
+  } else if (et === "error") {
+    logLine("err", d.agent || "", text);
+  } else {
+    logLine(cat, d.agent || "", `[${et}] ` + text);
+  }
+}
+
+/* ---------------- console rendering ---------------- */
+function catClass(cat) { return "t-" + cat; }
+function nowTs(t) { return new Date((t || Date.now() / 1000) * 1000).toTimeString().slice(0, 8); }
+
+function consoleHidden(cat) { return !S.filters.has(cat); }
+
+function newLine(cat, agent, text, suffix, expandable) {
+  const box = $("#console");
+  const ln = document.createElement("div");
+  ln.className = "ln " + catClass(cat) + (expandable ? " clickable" : "");
+  const ts = document.createElement("span"); ts.className = "ts"; ts.textContent = nowTs();
+  const b  = document.createElement("span"); b.className = "b";
+  b.textContent = cat === "think" ? "think" : cat === "tool" ? "tool" : cat;
+  const ag = document.createElement("span"); ag.className = "ag"; ag.textContent = agent || "";
+  ag.title = agent || "";
+  const tx = document.createElement("span"); tx.className = "tx";
+  tx.textContent = text + (suffix || "");
+  if (expandable) {
+    tx.classList.add("expanded");
+    ln.addEventListener("click", () => tx.classList.toggle("expanded"));
+  }
+  ln.append(ts, b, ag, tx);
+  box.appendChild(ln);
+  S.counts[cat]++;
+  if (box.childElementCount > 1500) box.firstElementChild.remove();
+  S.lastLine = { ln, cat, agent, et: null };
+  maybeScroll();
+  updateFilterCounts();
+  return ln;
+}
+
+function logLine(cat, agent, text, suffix, expandable) {
+  if (S.paused) { S.hiddenCount++; $("#clearlog").textContent = `Clear (+${S.hiddenCount} hidden)`; return; }
+  if (consoleHidden(cat)) { /* still count + keep DOM, CSS hides it */ }
+  newLine(cat, agent, text, suffix, expandable);
+}
+
+/* consecutive stream/thinking tokens from the same agent grow one line */
+function logStream(cat, agent, et, text) {
+  if (S.paused) { S.hiddenCount++; return; }
+  const L = S.lastLine;
+  if (L && L.ln.isConnected && L.cat === cat && L.agent === agent && L.et === et) {
+    const tx = $(".tx", L.ln);
+    const cur = tx.textContent;
+    if (cur.length < 20000) { tx.textContent = cur + text; maybeScroll(); return; }
+  }
+  const ln = newLine(cat, agent, text);
+  S.lastLine = { ln, cat, agent, et };
+}
+
+function maybeScroll() {
+  if ($("#autoscroll").checked) $("#console").scrollTop = $("#console").scrollHeight;
+}
+function updateFilterCounts() {
+  $$(".fchip[data-cat]").forEach(ch => {
+    const n = $(".n", ch); if (n) n.textContent = S.counts[ch.dataset.cat] || "";
+  });
+}
+
+/* ---------------- chat tab ---------------- */
+function activeSession() { return (S.state && S.state.active_session) || null; }
+
+function renderChatBanner() {
+  const a = activeSession();
+  $("#nochat").style.display = a ? "none" : "block";
+}
+function chatMsgEl(m) {
+  const el = document.createElement("div");
+  let role = (m.role || "").toLowerCase();
+  const sender = m.sender || (role === "user" ? "user" : role);
+  if (sender === "Error" || role === "error") role = "error";
+  el.className = "msg " + (role || "system");
+  const who = document.createElement("div"); who.className = "who";
+  const r = document.createElement("span"); r.className = "role"; r.textContent = role || "system";
+  const s = document.createElement("span"); s.textContent = sender;
+  const t = document.createElement("span"); t.className = "spacer";
+  t.style.flex = "1";
+  const ts = document.createElement("span");
+  ts.textContent = m.timestamp ? new Date(m.timestamp * 1000).toTimeString().slice(0, 8) : "";
+  who.append(r, s, t, ts);
+  const body = document.createElement("div"); body.className = "body";
+  body.textContent = m.content || "";
+  el.append(who, body);
+  appendFileLinks(el, m.files);
+  return el;
+}
+
+/* File links the backend attached to the message (server-side scan of
+   the ANSWER text — never the thinking stream): every real local file
+   mentioned in the message gets a clickable download link, appended at
+   the end of the message, one per line. Links point at the backend's
+   GET /files endpoint; ?download=1 forces a real browser download. */
+const FILE_KIND_ICON = { image: "🖼", audio: "🎵", video: "🎬",
+                          document: "📄", archive: "🗜", file: "📎" };
+function fmtSize(n) {
+  if (n === undefined || n === null || isNaN(n)) return "";
+  if (n < 1024) return n + " B";
+  if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+  if (n < 1073741824) return (n / 1048576).toFixed(1) + " MB";
+  return (n / 1073741824).toFixed(2) + " GB";
+}
+function fileUrl(f) {
+  const u = S.base.replace(/\/+$/, "") + (f.url_download || f.url);
+  if (S.key && u.indexOf("token=") === -1) {
+    return u + (u.indexOf("?") === -1 ? "?" : "&") + "token=" + encodeURIComponent(S.key);
+  }
+  return u;
+}
+function appendFileLinks(el, files) {
+  if (!files || !files.length) return;
+  const box = document.createElement("div"); box.className = "msgfiles";
+  const lab = document.createElement("div"); lab.className = "flabel";
+  lab.textContent = files.length === 1 ? "file — download" : "files — download";
+  box.appendChild(lab);
+  for (const f of files) {
+    const a = document.createElement("a");
+    a.className = "dl";
+    a.href = fileUrl(f);
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.setAttribute("download", f.name || "");
+    const ic = document.createElement("span"); ic.className = "fi";
+    ic.textContent = FILE_KIND_ICON[f.kind] || FILE_KIND_ICON.file;
+    const nm = document.createElement("span"); nm.className = "fname";
+    nm.textContent = f.name || f.path || "file";
+    a.append(ic, nm);
+    if (f.size !== undefined && f.size !== null && !isNaN(f.size)) {
+      const sz = document.createElement("span"); sz.className = "fsize";
+      sz.textContent = fmtSize(f.size);
+      a.appendChild(sz);
+    }
+    const dl = document.createElement("span"); dl.className = "fdl";
+    dl.textContent = "⬇ download";
+    a.appendChild(dl);
+    box.appendChild(a);          // each link on its OWN line (flex column)
+  }
+  el.appendChild(box);
+}
+/* Live chat events carry an explicit display role from the backend
+   (user / assistant / system / error) so they render with the SAME
+   bubble styling as a history reload. Older backends / buffered events
+   only have the sender — fall back to the exact same inference the
+   backend uses (server/broadcast.chat_event_role). Before this, every
+   live message was hardcoded to role "system" (dashed muted note)
+   while the reloaded history showed proper user/assistant bubbles. */
+function chatEventRole(d) {
+  if (d.role) return d.role;
+  const s = (d.sender || "").trim();
+  if (s === "Error") return "error";
+  if (s.toLowerCase() === "system") return "system";
+  const a = activeSession();
+  const un = ((a && a.user_name) || "User").trim();
+  if (s && un && s.toLowerCase() === un.toLowerCase()) return "user";
+  return "assistant";
+}
+function onChatEvent(d, ts) {
+  if (d.display_only) return;                    // UI-only confirmations
+  const log = $("#chatlog");
+  log.appendChild(chatMsgEl({ role: chatEventRole(d), sender: d.sender,
+                              content: d.text, timestamp: ts || d.ts,
+                              files: d.files }));
+  while (log.childElementCount > 400) log.firstElementChild.remove();
+  if ($("#tab-chat").classList.contains("active")) maybeScrollChat();
+}
+function maybeScrollChat() {
+  const pane = $("#tab-chat");
+  if (pane.scrollHeight - pane.scrollTop - pane.clientHeight < 260)
+    pane.scrollTop = pane.scrollHeight;
+}
+async function loadChatHistory(force) {
+  const a = activeSession();
+  if (!a) { $("#chatlog").innerHTML = ""; S.chatSession = null; return; }
+  if (!force && S.chatSession === a.session_name) return;
+  try {
+    /* tail=400 -> the NEWEST 400 chat messages. The backend filters
+       tool-call traffic out of this view, so a reload shows exactly
+       the dialogue the live tab shows (previously limit=400 returned
+       the OLDEST 400 raw-context messages — tool outputs as bubbles
+       and the recent chat silently cut off). */
+    const h = await api("GET", "/output/history?tail=400");
+    const log = $("#chatlog");
+    log.innerHTML = "";
+    (h.messages || []).forEach(m => log.appendChild(chatMsgEl(m)));
+    S.chatSession = a.session_name;
+    if ($("#tab-chat").classList.contains("active")) $("#tab-chat").scrollTop = $("#tab-chat").scrollHeight;
+  } catch (e) {}
+}
+function reloadChatIfSessionChanged() {
+  const a = activeSession();
+  if (!a) { $("#chatlog").innerHTML = ""; S.chatSession = null; return; }
+  if (S.chatSession !== a.session_name) loadChatHistory(true);
+}
+function renderPendingUser(pending) {
+  const box = $("#pendingbox");
+  if (!pending || !pending.length) { box.innerHTML = ""; return; }
+  box.innerHTML = `<div class="card"><h3>Pending user messages
+    <span class="right"><button class="btn small danger" id="clearpending">Clear</button></span></h3>
+    <ol class="mono" style="margin:6px 0 0 18px">${pending.map(p => `<li></li>`).join("")}</ol></div>`;
+  const ol = $("ol", box);
+  pending.forEach(p => { const li = document.createElement("li"); li.textContent = p; ol.appendChild(li); });
+  $("#clearpending").onclick = async () => { try { await api("DELETE", "/control/queue"); } catch (e) {} };
+}
+
+/* ---------------- agents tab ---------------- */
+function renderAgents() {
+  const a = activeSession();
+  const tbody = $("#agentstbl tbody");
+  tbody.innerHTML = "";
+  $("#noagents").style.display = a ? "none" : "block";
+  $("#agentscard").style.display = a ? "block" : "none";
+  if (!a) return;
+  const names = Object.keys(a.agents || {}).sort();
+  if (!names.length) {
+    tbody.innerHTML = `<tr><td colspan="5" class="muted">No agents yet — create one.</td></tr>`;
+    return;
+  }
+  for (const n of names) {
+    const g = a.agents[n];
+    const tr = document.createElement("tr");
+    if (g.running) tr.className = "running-row";
+    const flags = [
+      g.active ? `<span class="badge on">active</span>` : `<span class="badge off">inactive</span>`,
+      g.running ? `<span class="badge run">running</span>` : "",
+      g.silent ? `<span class="badge silent">silent</span>` : "",
+      g.use_tools ? "" : `<span class="badge">no tools</span>`,
+      g.mcp ? `<span class="badge">mcp</span>` : "",
+    ].join("");
+    const tools = (g.tools || []).length
+      ? (g.tools || []).slice(0, 3).join(", ") + ((g.tools || []).length > 3 ? ` +${g.tools.length - 3}` : "")
+      : "—";
+    tr.innerHTML = `
+      <td><b></b><div class="muted" style="font-size:11.5px"></div></td>
+      <td class="mono"></td>
+      <td>${flags}</td>
+      <td class="mono muted" style="font-size:11.5px"></td>
+      <td class="actions"></td>`;
+    $("td b", tr).textContent = n;
+    $("td div", tr).textContent = g.description || "";
+    $("td:nth-child(2)", tr).textContent = `${g.model} @ ${g.endpoint}`;
+    $("td:nth-child(4)", tr).textContent = tools;
+    const act = $("td.actions", tr);
+
+    const mk = (label, title, fn, cls) => {
+      const b = document.createElement("button");
+      b.className = "btn small " + (cls || "");
+      b.textContent = label; b.title = title;
+      b.onclick = fn; act.appendChild(b); act.append(" ");
+      return b;
+    };
+    mk(g.active ? "Deactivate" : "Activate", "POST /control/agents/{name}/active",
+      () => api("POST", `/control/agents/${encodeURIComponent(n)}/active`, { active: !g.active })
+        .then(() => scheduleRefreshNow()).catch(() => {}));
+    mk("Stop", "stop current stream", () => api("POST", `/control/agents/${encodeURIComponent(n)}/stop`)
+        .then(() => scheduleRefreshNow()).catch(() => {}));
+    mk("Inject", "inject into next tool output",
+      () => quickInject(n));
+    mk("Edit", "PATCH /control/agents/{name}", () => openAgentDialog(n));
+    mk("Rename", "PUT /control/agents/{name}", async () => {
+      const nn = prompt(`Rename agent '${n}' to:`, n); if (!nn || nn === n) return;
+      try { await api("PUT", `/control/agents/${encodeURIComponent(n)}`, { new_name: nn }); scheduleRefreshNow(); } catch (e) {}
+    });
+    mk("Delete", "DELETE /control/agents/{name}", async () => {
+      if (!confirm(`Delete agent '${n}'?`)) return;
+      try { await api("DELETE", `/control/agents/${encodeURIComponent(n)}`); scheduleRefreshNow(); } catch (e) {}
+    }, "danger");
+    tbody.appendChild(tr);
+  }
+}
+function quickInject(agentName) {
+  switchTab("inject");
+  $("#injsess").value = (activeSession() || {}).session_name || "";
+  $("#injagent").value = agentName;
+  $('[name="text"]', $("#injectform")).focus();
+  toast(`Fill the message and press Inject — targets agent '${agentName}'.`);
+}
+
+/* agent create/edit dialog */
+async function openAgentDialog(name) {
+  /* Fresh catalog BEFORE building the form: the suggested name comes
+     from names.txt and the pickers below read S.state — all must be
+     re-read from disk at this moment (PyQt re-read everything when the
+     Create Agent dialog opened). Never blocks the dialog on failure. */
+  await ensureFreshState(0);
+  S.editingAgent = name || null;
+  const f = $("#agentform");
+  f.reset();
+  $("#agentdlgtitle").textContent = name ? `Edit agent — ${name}` : "New agent";
+  $('[name="name"]', f).disabled = !!name;
+  $('[name="name"]', f).value = name || "";
+  $('[name="endpoint"]', f).value = "local";
+  $('[name="model"]', f).value = "qwen3.5:9b";
+  $('[name="temperature"]', f).value = "0.5";
+  $('[name="num_ctx"]', f).value = "32000";
+  $('[name="max_context_messages"]', f).value = "30";
+  $('[name="max_tool_iterations"]', f).value = "1000";
+  $('[name="active"]', f).checked = true;
+  $('[name="use_tools"]', f).checked = true;
+  if (!name) {
+    // Create mode: pre-fill a random UNUSED name from names.txt —
+    // exactly the proven PyQt behaviour (missing file -> stays blank).
+    const suggested = suggestAgentName();
+    if (suggested) $('[name="name"]', f).value = suggested;
+  }
+  if (name) {
+    const g = ((activeSession() || {}).agents || {})[name];
+    if (g) {
+      $('[name="endpoint"]', f).value = g.endpoint || "local";
+      $('[name="model"]', f).value = g.model || "";
+      $('[name="temperature"]', f).value = g.temperature;
+      $('[name="num_ctx"]', f).value = g.num_ctx;
+      $('[name="max_context_messages"]', f).value = g.max_context_messages;
+      $('[name="max_tool_iterations"]', f).value = g.max_tool_iterations;
+      $('[name="system_prompt"]', f).value = g.system_prompt || "";
+      $('[name="description"]', f).value = g.description || "";
+      $('[name="tools"]', f).value = (g.tools || []).join(",");
+      $('[name="prompts"]', f).value = (g.prompts || []).join(",");
+      $('[name="mcp_servers"]', f).value = (g.mcp_servers || []).join(",");
+      $('[name="active"]', f).checked = !!g.active;
+      $('[name="silent"]', f).checked = !!g.silent;
+      $('[name="use_tools"]', f).checked = !!g.use_tools;
+      $('[name="image"]', f).checked = !!g.image;
+      $('[name="audio"]', f).checked = !!g.audio;
+      $('[name="mcp"]', f).checked = !!g.mcp;
+    }
+  }
+  $("#agentfrmhint").textContent = name
+    ? "PATCH /control/agents/" + name : "POST /control/agents";
+  $("#agentdlg").showModal();
+}
+
+function agentFormBody() {
+  const f = $("#agentform");
+  const val = n => $(`[name="${n}"]`, f);
+  const csv = v => (v || "").split(",").map(x => x.trim()).filter(Boolean);
+  const num = (n, dflt) => { const v = parseFloat(val(n).value); return isNaN(v) ? dflt : v; };
+  const body = {
+    name: val("name").value.trim(),
+    system_prompt: val("system_prompt").value,
+    description: val("description").value,
+    model: val("model").value.trim() || "qwen3.5:9b",
+    endpoint: val("endpoint").value.trim() || "local",
+    temperature: num("temperature", 0.5),
+    num_ctx: Math.round(num("num_ctx", 32000)),
+    max_context_messages: Math.round(num("max_context_messages", 30)),
+    max_tool_iterations: Math.round(num("max_tool_iterations", 1000)),
+    tools: csv(val("tools").value),
+    prompts: csv(val("prompts").value),
+    mcp_servers: csv(val("mcp_servers").value),
+    active: val("active").checked,
+    silent: val("silent").checked,
+    use_tools: val("use_tools").checked,
+    image: val("image").checked,
+    audio: val("audio").checked,
+    mcp: val("mcp").checked,
+  };
+  return body;
+}
+
+$("#agentform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const body = agentFormBody();
+  if (!body.name) { toast("Agent name is required", "error"); return; }
+  try {
+    if (S.editingAgent) {
+      const { name, ...rest } = body;
+      await api("PATCH", `/control/agents/${encodeURIComponent(S.editingAgent)}`, rest);
+    } else {
+      await api("POST", "/control/agents", body);
+    }
+    $("#agentdlg").close();
+    scheduleRefreshNow();
+  } catch (err) {}
+});
+
+$("#loadmodels").addEventListener("click", async () => {
+  const ep = $('[name="endpoint"]', $("#agentform")).value.trim() || "local";
+  toast(`Fetching models for endpoint '${ep}'…`);
+  try {
+    const r = await api("GET", `/control/endpoints/models?endpoint=${encodeURIComponent(ep)}`);
+    const dl = $("#modellist"); dl.innerHTML = "";
+    (r.models || []).forEach(m => {
+      const name = typeof m === "string" ? m : (m.name || m.model || "");
+      if (name) { const o = document.createElement("option"); o.value = name; dl.appendChild(o); }
+    });
+    toast(`Loaded ${(r.models || []).length} models for '${ep}'`, "success");
+  } catch (e) {}
+});
+
+/* =====================================================================
+   Side pickers — small side boxes for names (single-select) and
+   tools (tree multi-select) / prompts / mcp servers (multi-select).
+   Data comes from the /state snapshot: names, tools.files, prompts,
+   mcp.servers. Anchored next to their button, closed by outside click,
+   Esc, Cancel or Apply.
+   ===================================================================== */
+function namesList() {
+  return (((S.state || {}).names || {}).names) || [];
+}
+
+function suggestAgentName() {
+  /* Random UNUSED name from names.txt (case-insensitive exclusion of
+     the session's existing agents) — the proven desktop behaviour. */
+  const names = namesList();
+  if (!names.length) return "";
+  const a = activeSession();
+  const existing = new Set(Object.keys((a || {}).agents || {})
+    .map(n => String(n).toLowerCase()));
+  const unused = names.filter(n => !existing.has(String(n).toLowerCase()));
+  if (!unused.length) return "";
+  return unused[Math.floor(Math.random() * unused.length)];
+}
+
+function csvVal(v) {
+  return (v || "").split(",").map(x => x.trim()).filter(Boolean);
+}
+
+function closeSidePicker() {
+  if (!S.picker) return;
+  const p = S.picker;
+  S.picker = null;
+  document.removeEventListener("mousedown", p.outside, true);
+  document.removeEventListener("keydown", p.key, true);
+  if (p.el && p.el.isConnected) p.el.remove();
+}
+
+/* Set for a tick after a picker swallowed an Escape keypress, so the
+   agent dialog's native Esc-to-close does not fire at the same time. */
+let suppressDialogCancel = false;
+
+/* cfg: {anchor, title, subtitle, mode:"single"|"multi"|"tree", width,
+         items, selected:[values], applyLabel, emptyText,
+         apply(selectedValues)}
+     single items: {value, label, hint, disabled, tag}
+     multi  items: {value, label, hint}
+     tree   items: {value(file), label, hint, children:[{value,label,hint}]} */
+function openSidePicker(cfg) {
+  closeSidePicker();
+  const single = cfg.mode === "single";
+  const tree = cfg.mode === "tree";
+
+  const box = document.createElement("div");
+  box.className = "sidebox";
+  if (cfg.width) box.style.width = cfg.width + "px";
+
+  const head = document.createElement("div"); head.className = "sb-head";
+  const hb = document.createElement("b"); hb.textContent = cfg.title || "pick";
+  const sub = document.createElement("span"); sub.className = "sb-sub";
+  sub.textContent = cfg.subtitle || "";
+  const hx = document.createElement("button"); hx.type = "button";
+  hx.className = "sb-x"; hx.textContent = "✕";
+  hx.onclick = () => closeSidePicker();
+  head.append(hb, sub, hx);
+  box.appendChild(head);
+
+  const filtWrap = document.createElement("div"); filtWrap.className = "sb-filter";
+  const filt = document.createElement("input");
+  filt.placeholder = "filter…";
+  filtWrap.appendChild(filt);
+  box.appendChild(filtWrap);
+
+  const list = document.createElement("div"); list.className = "sb-list";
+  box.appendChild(list);
+
+  const foot = document.createElement("div"); foot.className = "sb-foot";
+  const cnt = document.createElement("span"); cnt.className = "cnt";
+  const bCancel = document.createElement("button"); bCancel.type = "button";
+  bCancel.className = "btn small"; bCancel.textContent = "Cancel";
+  bCancel.onclick = () => closeSidePicker();
+  const bApply = document.createElement("button"); bApply.type = "button";
+  bApply.className = "btn small primary";
+  bApply.textContent = cfg.applyLabel || "Apply";
+  foot.append(cnt, bCancel, bApply);
+  box.appendChild(foot);
+
+  const state = {
+    single: (single && cfg.selected && cfg.selected[0]) || null,
+    multi: new Set((cfg.selected || []).filter(Boolean)),
+    expanded: new Set(),
+  };
+
+  function selectedValues() {
+    if (single) return state.single ? [state.single] : [];
+    return [...state.multi];
+  }
+  function updateCount() {
+    const vals = selectedValues();
+    if (tree) {
+      const total = cfg.items.reduce((n, fl) => n + (fl.children || []).length, 0);
+      cnt.textContent = `${vals.length} of ${total} tools selected`;
+    } else if (single) {
+      cnt.textContent = vals.length ? `selected: ${vals[0]}` : "nothing selected";
+    } else {
+      cnt.textContent = `${vals.length} selected`;
+    }
+  }
+  function refreshTreeChecks() {
+    $$(".sb-node", list).forEach(node => {
+      const fl = cfg.items[+node.dataset.idx];
+      const kids = fl.children || [];
+      const nSel = kids.filter(k => state.multi.has(k.value)).length;
+      const cb = $("input[type=checkbox]", node);
+      if (cb) {
+        cb.checked = kids.length > 0 && nSel === kids.length;
+        cb.indeterminate = nSel > 0 && nSel < kids.length;
+      }
+    });
+    updateCount();
+  }
+
+  function build() {
+    list.innerHTML = "";
+    if (tree) {
+      cfg.items.forEach((fl, idx) => {
+        const node = document.createElement("div");
+        node.className = "sb-node" + (state.expanded.has(fl.value) ? " open" : "");
+        node.dataset.idx = idx;
+        const row = document.createElement("div"); row.className = "sb-item";
+        const arrow = document.createElement("span");
+        arrow.className = "sb-arrow"; arrow.textContent = "▶";
+        const cb = document.createElement("input"); cb.type = "checkbox";
+        const kids = fl.children || [];
+        const nSel = kids.filter(k => state.multi.has(k.value)).length;
+        cb.checked = kids.length > 0 && nSel === kids.length;
+        cb.indeterminate = nSel > 0 && nSel < kids.length;
+        const nm = document.createElement("b"); nm.className = "file";
+        nm.textContent = fl.label || fl.value;
+        nm.title = fl.hint || nm.textContent;
+        const tag = document.createElement("span"); tag.className = "tag";
+        tag.textContent = `${kids.length} tools`;
+        row.append(arrow, cb, nm, tag);
+        const toggle = () => {
+          node.classList.toggle("open");
+          if (node.classList.contains("open")) state.expanded.add(fl.value);
+          else state.expanded.delete(fl.value);
+          position();               // the box may grow — stay inside the viewport
+        };
+        row.addEventListener("click", (e) => {
+          if (e.target === cb) return;      // the checkbox handles itself
+          toggle();
+        });
+        cb.addEventListener("click", e => e.stopPropagation());
+        cb.addEventListener("change", () => {
+          kids.forEach(k => cb.checked ? state.multi.add(k.value)
+                                       : state.multi.delete(k.value));
+          refreshTreeChecks();
+        });
+        node.appendChild(row);
+
+        const kidBox = document.createElement("div"); kidBox.className = "sb-kids";
+        kids.forEach(k => {
+          const it = document.createElement("div"); it.className = "sb-item";
+          it.dataset.value = k.value;
+          const kcb = document.createElement("input"); kcb.type = "checkbox";
+          kcb.checked = state.multi.has(k.value);
+          const knm = document.createElement("span"); knm.className = "nm";
+          knm.textContent = k.label || k.value;
+          knm.title = k.hint || knm.textContent;
+          it.append(kcb, knm);
+          it.addEventListener("click", () => {
+            kcb.checked = !kcb.checked;
+            kcb.checked ? state.multi.add(k.value) : state.multi.delete(k.value);
+            refreshTreeChecks();
+          });
+          kcb.addEventListener("click", e => e.stopPropagation());
+          kcb.addEventListener("change", () => {
+            kcb.checked ? state.multi.add(k.value) : state.multi.delete(k.value);
+            refreshTreeChecks();
+          });
+          kidBox.appendChild(it);
+        });
+        node.appendChild(kidBox);
+        list.appendChild(node);
+      });
+    } else {
+      cfg.items.forEach(it => {
+        const el = document.createElement("div");
+        el.className = "sb-item";
+        if (single && state.single === it.value) el.classList.add("sel");
+        if (it.disabled) el.classList.add("disabled");
+        el.dataset.value = it.value;
+        if (!single) {
+          const cb = document.createElement("input"); cb.type = "checkbox";
+          cb.checked = state.multi.has(it.value);
+          cb.disabled = !!it.disabled;
+          el.appendChild(cb);
+        }
+        const nm = document.createElement("span"); nm.className = "nm";
+        nm.textContent = it.label || it.value;
+        el.appendChild(nm);
+        if (it.hint) {
+          const h = document.createElement("span"); h.className = "hint2";
+          h.textContent = it.hint; h.title = it.hint;
+          el.appendChild(h);
+        }
+        if (it.tag) {
+          const t = document.createElement("span"); t.className = "tag";
+          t.textContent = it.tag;
+          el.appendChild(t);
+        }
+        if (!it.disabled) el.addEventListener("click", () => {
+          if (single) {
+            state.single = it.value;
+            $$(".sb-item", list).forEach(x => x.classList.toggle("sel", x === el));
+          } else {
+            const cb = $("input[type=checkbox]", el);
+            cb.checked = !cb.checked;
+            cb.checked ? state.multi.add(it.value) : state.multi.delete(it.value);
+          }
+          updateCount();
+        });
+        if (single && !it.disabled)
+          el.addEventListener("dblclick", () => { cfg.apply([it.value]); closeSidePicker(); });
+        list.appendChild(el);
+      });
+    }
+    if (!cfg.items.length) {
+      const em = document.createElement("div"); em.className = "sb-empty";
+      em.textContent = cfg.emptyText || "nothing to pick";
+      list.appendChild(em);
+    }
+    updateCount();
+  }
+
+  function applyFilter(q) {
+    q = (q || "").toLowerCase();
+    if (tree) {
+      $$(".sb-node", list).forEach(node => {
+        const fl = cfg.items[+node.dataset.idx];
+        const selfMatch = String(fl.label || "").toLowerCase().includes(q);
+        const kidMatch = (fl.children || []).some(c =>
+          String(c.label || "").toLowerCase().includes(q));
+        node.style.display = (!q || selfMatch || kidMatch) ? "" : "none";
+        if (q && kidMatch) { node.classList.add("open"); state.expanded.add(fl.value); }
+        else if (!q) node.classList.toggle("open", state.expanded.has(fl.value));
+        $$(".sb-kids .sb-item", node).forEach(it => {
+          const v = String(it.dataset.value || "").toLowerCase();
+          it.style.display = (!q || selfMatch || v.includes(q)) ? "" : "none";
+        });
+      });
+    } else {
+      $$(".sb-item", list).forEach(it => {
+        const t = (it.textContent || "").toLowerCase();
+        it.style.display = (!q || t.includes(q)) ? "" : "none";
+      });
+    }
+  }
+
+  bApply.addEventListener("click", () => {
+    cfg.apply(selectedValues());
+    closeSidePicker();
+  });
+  filt.addEventListener("input", () => { applyFilter(filt.value); position(); });
+
+  // Keep the box fully inside the viewport however the content grows
+  // (expanding tree nodes / filtering). Runs after every size change.
+  function position() {
+    box.style.maxHeight = Math.max(220, window.innerHeight - 16) + "px";
+    const r = cfg.anchor.getBoundingClientRect();
+    const bw = box.offsetWidth, bh = box.offsetHeight;
+    let left = r.width < 120 ? r.right + 6 : r.left;
+    left = Math.max(8, Math.min(left, window.innerWidth - bw - 8));
+    let top = r.bottom + 6;
+    if (top + bh > window.innerHeight - 8)
+      top = Math.max(8, r.top - bh - 6);
+    box.style.left = left + "px";
+    box.style.top = top + "px";
+  }
+
+  // host: INSIDE the modal <dialog> so the box renders above the backdrop
+  const host = (cfg.anchor && cfg.anchor.closest("dialog")) || document.body;
+  host.appendChild(box);
+  build();
+  position();
+  filt.focus();
+
+  const outside = (e) => {
+    if (box.isConnected && !box.contains(e.target)
+        && e.target !== cfg.anchor && !cfg.anchor.contains(e.target))
+      closeSidePicker();
+  };
+  const key = (e) => {
+    if (e.key !== "Escape") return;
+    e.preventDefault();          // keep the enclosing <dialog> open —
+    e.stopPropagation();         // the Esc only closes the picker
+    suppressDialogCancel = true;
+    setTimeout(() => { suppressDialogCancel = false; }, 50);
+    closeSidePicker();
+  };
+  document.addEventListener("mousedown", outside, true);
+  document.addEventListener("keydown", key, true);
+  S.picker = { el: box, outside, key };
+  return box;
+}
+
+/* ---- picker buttons in the agent dialog ---- */
+$("#picknames").addEventListener("click", async () => {
+  await ensureFreshState(0);      // names.txt re-read on every open
+  const f = $("#agentform");
+  const names = namesList();
+  const a = activeSession();
+  const taken = new Set(Object.keys((a || {}).agents || {})
+    .map(n => String(n).toLowerCase()));
+  const cur = $('[name="name"]', f).value.trim();
+  openSidePicker({
+    anchor: $("#picknames"),
+    title: "names.txt — pick one",
+    subtitle: names.length ? `${names.length} names` : "",
+    mode: "single",
+    width: 300,
+    items: names.map(n => ({
+      value: n, label: n,
+      disabled: taken.has(String(n).toLowerCase()),
+      tag: taken.has(String(n).toLowerCase()) ? "in use" : null,
+    })),
+    selected: cur && names.includes(cur) ? [cur] : [],
+    emptyText: "names.txt not found — put it in the backend root (one name per line)",
+    applyLabel: "Use",
+    apply: (vals) => {
+      if (!vals.length) return;
+      $('[name="name"]', f).value = vals[0];
+    },
+  });
+});
+
+$("#picktools").addEventListener("click", async () => {
+  await ensureFreshState(0);      // tools/ re-scanned on every open
+  const f = $("#agentform");
+  const files = (((S.state || {}).tools || {}).files || []).map(fd => ({
+    value: fd.file, label: fd.file,          // loader names carry no .py
+    hint: fd.doc || "",
+    children: (fd.tools || []).map(t => ({
+      value: t.name, label: t.name, hint: t.doc || "",
+    })),
+  }));
+  openSidePicker({
+    anchor: $("#picktools"),
+    title: "tools — tree, multi-select",
+    subtitle: `${files.length} files`,
+    mode: "tree",
+    width: 400,
+    items: files,
+    selected: csvVal($('[name="tools"]', f).value),
+    emptyText: "no tool files loaded (tools/ folder)",
+    apply: (vals) => { $('[name="tools"]', f).value = vals.join(", "); },
+  });
+});
+
+$("#pickprompts").addEventListener("click", async () => {
+  await ensureFreshState(0);      // prompts/ re-scanned on every open
+  const f = $("#agentform");
+  const items = ((S.state || {}).prompts || []).map(p => ({
+    value: p.name, label: p.name, hint: p.description || "",
+  }));
+  openSidePicker({
+    anchor: $("#pickprompts"),
+    title: "prompts — multi-select",
+    subtitle: `${items.length} prompts`,
+    mode: "multi",
+    width: 360,
+    items,
+    selected: csvVal($('[name="prompts"]', f).value),
+    emptyText: "no prompt files in prompts/",
+    apply: (vals) => { $('[name="prompts"]', f).value = vals.join(", "); },
+  });
+});
+
+$("#pickmcp").addEventListener("click", async () => {
+  await ensureFreshState(0);      // mcp_servers.json re-read on every open
+  const f = $("#agentform");
+  const servers = (((S.state || {}).mcp || {}).servers) || {};
+  const items = Object.keys(servers).sort().map(n => {
+    const c = servers[n] || {};
+    let hint = String(c.transport || "");
+    const extra = c.description || c.command || c.url || "";
+    if (extra) hint = (hint ? hint + " · " : "") + extra;
+    return { value: n, label: n, hint };
+  });
+  openSidePicker({
+    anchor: $("#pickmcp"),
+    title: "mcp servers — multi-select",
+    subtitle: `${items.length} servers`,
+    mode: "multi",
+    width: 360,
+    items,
+    selected: csvVal($('[name="mcp_servers"]', f).value),
+    emptyText: "no MCP servers registered",
+    apply: (vals) => { $('[name="mcp_servers"]', f).value = vals.join(", "); },
+  });
+});
+
+$("#agentdlg").addEventListener("close", closeSidePicker);
+$("#agentdlg").addEventListener("cancel", (e) => {
+  // Esc while a picker is open must close ONLY the picker, not the dialog
+  if (S.picker || suppressDialogCancel) e.preventDefault();
+});
+
+/* ---------------- sessions tab ---------------- */
+function fmtWhen(t) {
+  if (!t) return "—";
+  const d = new Date(t * 1000);
+  return d.toLocaleDateString() + " " + d.toTimeString().slice(0, 5);
+}
+function baseName(p) {
+  const s = String(p || "").replace(/\\/g, "/");
+  const i = s.lastIndexOf("/");
+  return i < 0 ? s : s.slice(i + 1);
+}
+
+function renderSessions() {
+  const st = S.state || {};
+  const tbody = $("#sessionsdisk tbody");
+  tbody.innerHTML = "";
+  const list = st.sessions_on_disk || [];
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="muted">No session files yet
+      (autosave/ and sessions/ are both empty).</td></tr>`;
+    return;
+  }
+
+  /* Group every save by session NAME. Only the NEWEST save of each name
+     becomes a table row — the older saves roll down from the "Backups"
+     select in that row (pick one to inspect/load it). */
+  const groups = new Map();
+  for (const s of list) {
+    if (!groups.has(s.name)) groups.set(s.name, []);
+    groups.get(s.name).push(s);
+  }
+  const ordered = [...groups.entries()]
+    .map(([name, saves]) => {
+      saves.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
+      return { name, saves };
+    })
+    .sort((a, b) => (b.saves[0].mtime || 0) - (a.saves[0].mtime || 0));
+
+  // forget roll-down picks for sessions that vanished from disk
+  for (const key of Object.keys(S.sessSel))
+    if (!groups.has(key)) delete S.sessSel[key];
+
+  for (const g of ordered) {
+    let selIdx = g.saves.findIndex(s => s.file === S.sessSel[g.name]);
+    if (selIdx < 0) selIdx = 0;
+    const cur = g.saves[selIdx];
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><b></b><div class="mono muted" style="font-size:11px"></div></td>
+      <td></td>
+      <td class="mono muted"></td>
+      <td></td>
+      <td class="muted"></td>
+      <td class="actions"></td>`;
+    $("td b", tr).textContent = g.name;
+    const sub = $("td div", tr);
+    sub.textContent = `${cur.folder} · ${baseName(cur.file)}`;
+    sub.title = cur.file;
+
+    /* ---- the Backups roll-down (only when older saves exist) ---- */
+    const bcell = $("td:nth-child(2)", tr);
+    if (g.saves.length > 1) {
+      const sel = document.createElement("select");
+      sel.className = "backups";
+      sel.title = `${g.saves.length} saves of '${g.name}' on disk — newest first`;
+      g.saves.forEach((s, i) => {
+        const o = document.createElement("option");
+        o.value = s.file;
+        o.textContent = (i === 0 ? "latest" : "backup")
+          + ` · ${fmtWhen(s.mtime)} · ${s.folder} · ${s.messages} msgs`;
+        o.selected = i === selIdx;
+        sel.appendChild(o);
+      });
+      sel.addEventListener("change", () => {
+        S.sessSel[g.name] = sel.value;
+        renderSessions();          // row now shows the picked backup
+      });
+      bcell.appendChild(sel);
+    } else {
+      bcell.innerHTML = `<span class="muted" style="font-size:11.5px">only save</span>`;
+    }
+
+    $("td:nth-child(3)", tr).textContent = (cur.agents || []).join(", ") || "—";
+    $("td:nth-child(4)", tr).textContent = cur.messages;
+    $("td:nth-child(5)", tr).textContent = fmtWhen(cur.mtime);
+    const act = $("td.actions", tr);
+    const bLoad = document.createElement("button");
+    bLoad.className = "btn small"; bLoad.textContent = "Load";
+    bLoad.title = `POST /control/session/load — make '${baseName(cur.file)}' the ACTIVE interactive session`;
+    bLoad.onclick = () => api("POST", "/control/session/load", { path: cur.file })
+      .then(r => {
+        toast(`Loaded '${r.session_name}' (${baseName(cur.file)})`, "success");
+        $("#pauseinput").checked = !!r.wait_user_input;   // loads start waiting
+        scheduleRefreshNow();
+      })
+      .catch(() => {});
+    const bQueue = document.createElement("button");
+    bQueue.className = "btn small primary"; bQueue.textContent = "Queue";
+    bQueue.title = "Fill the enqueue form for this session";
+    bQueue.onclick = () => { switchTab("queue"); $("#enqname").value = g.name; window.scrollTo(0, 0);
+      $(".tabpane.active").scrollTop = 0; toast(`Enqueue form prefilled with '${g.name}'`); };
+    act.append(bLoad, " ", bQueue);
+    tbody.appendChild(tr);
+  }
+}
+
+/* ---------------- queue tab ---------------- */
+function renderQueue() {
+  const st = S.state || {};
+  renderActiveCard(activeSession());
+  const q = st.session_queue || [];
+  const tbody = $("#pendingtbl tbody");
+  tbody.innerHTML = "";
+  $("#pendingempty").style.display = q.length ? "none" : "block";
+  q.forEach((e, i) => {
+    const tr = document.createElement("tr");
+    const opts = [
+      e.activate_all ? "activate-all" : "",
+      (e.activate || []).length ? "activate:" + esc(e.activate.join("+")) : "",
+      e.idle_timeout ? `idle ${e.idle_timeout}s` : "",
+      e.auto_finish ? "" : "no-auto-finish",
+    ].filter(Boolean).join(", ");
+    tr.innerHTML = `
+      <td class="mono muted">${i + 1}</td>
+      <td><b></b></td>
+      <td class="muted"></td>
+      <td class="muted" style="font-size:11.5px">${opts || "—"}</td>
+      <td class="actions"></td>`;
+    $("td b", tr).textContent = e.session_name;
+    $("td:nth-child(3)", tr).textContent = e.message || "";
+    const act = $("td.actions", tr);
+    const mk = (label, title, fn, cls) => {
+      const b = document.createElement("button");
+      b.className = "btn small " + (cls || ""); b.textContent = label; b.title = title;
+      b.onclick = fn; act.appendChild(b); act.append(" ");
+    };
+    if (i > 0) mk("↑", "move up (runs earlier)", () =>
+      api("PATCH", `/queue/sessions/${e.id}/move`, { position: i - 1 }).then(() => scheduleRefreshNow()).catch(() => {}));
+    if (i < q.length - 1) mk("↓", "move down", () =>
+      api("PATCH", `/queue/sessions/${e.id}/move`, { position: i + 1 }).then(() => scheduleRefreshNow()).catch(() => {}));
+    mk("✕", "cancel this entry", () =>
+      api("DELETE", `/queue/sessions/${e.id}`).then(() => scheduleRefreshNow()).catch(() => {}), "danger");
+    tbody.appendChild(tr);
+  });
+
+  const rec = st.recent_queue || [];
+  const rbody = $("#recenttbl tbody");
+  rbody.innerHTML = "";
+  if (!rec.length) rbody.innerHTML = `<tr><td colspan="4" class="muted">Nothing finished yet.</td></tr>`;
+  rec.forEach(e => {
+    const tr = document.createElement("tr");
+    const cls = e.status === "completed" ? "ok" : (e.status === "failed" ? "bad" : "muted");
+    tr.innerHTML = `<td><b></b></td><td class="${cls}"></td><td class="muted"></td><td class="muted"></td>`;
+    $("td b", tr).textContent = e.session_name;
+    $("td:nth-child(2)", tr).textContent = e.status;
+    $("td:nth-child(3)", tr).textContent = e.result || e.error || "—";
+    $("td:nth-child(4)", tr).textContent = fmtWhen(e.finished_at);
+    rbody.appendChild(tr);
+  });
+  $("#qn").textContent = q.length || "";
+}
+
+function renderActiveCard(a) {
+  const el = $("#activebody");
+  if (!a) { el.innerHTML = `<span class="muted">No active session — the backend is
+    idle and waiting for queue entries or an interactive session.</span>`; return; }
+  const run = Object.entries(a.agents || {}).filter(([n, g]) => g.running).map(([n]) => n);
+  const eps = Object.entries(a.endpoints || {}).map(([ep, v]) =>
+    `<span class="badge ${v.status_color || "muted"}">${esc(ep)}: ${esc(v.status_text)}</span>`).join(" ");
+  el.innerHTML = `
+    <div style="font-size:15px"><b>${esc(a.session_name)}</b>
+      <span class="badge">${esc(a.source)}</span>
+      ${a.finished_at ? `<span class="badge">done: ${esc(a.finish_reason || "?")}</span>` : ""}
+    </div>
+    <div class="muted" style="margin:6px 0">started ${fmtWhen(a.started_at)} ·
+      user ${esc(a.user_name)} · ${a.history_messages} history messages ·
+      ${Object.keys(a.agents || {}).length} agents${run.length ? ` · running: ${esc(run.join(", "))}` : ""}</div>
+    <div>${eps || ""}</div>
+    <div style="margin-top:10px">
+      <button class="btn small" id="finishbtn">Finish gracefully</button>
+      <button class="btn small danger" id="abortbtn">Abort</button>
+      <span class="muted" style="margin-left:8px">autosave: <code class="mono">${esc(a.autosave_path || "—")}</code></span>
+    </div>`;
+  $("#finishbtn").onclick = () => api("POST", "/control/session/finish").then(r =>
+    toast(`Finishing '${r.finishing}'…`, "success")).catch(() => {});
+  $("#abortbtn").onclick = () => { if (confirm("Hard-stop the active session? (final autosave still happens)"))
+    api("POST", "/control/session/abort").then(r => toast(`Aborting '${r.aborting}'…`, "success")).catch(() => {}); };
+}
+
+/* ---------------- inject tab ---------------- */
+function renderInject() {
+  const st = S.state || {};
+  const staged = st.staged_injections || [];
+  const tbody = $("#stagedtbl tbody");
+  tbody.innerHTML = "";
+  $("#stagedempty").style.display = staged.length ? "none" : "block";
+  staged.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td><b></b></td><td></td><td class="muted"></td><td class="muted"></td><td class="actions"></td>`;
+    $("td b", tr).textContent = s.session_name;
+    $("td:nth-child(2)", tr).textContent = s.agent_name;
+    $("td:nth-child(3)", tr).textContent = s.text;
+    $("td:nth-child(4)", tr).textContent = fmtWhen(s.created_at);
+    const b = document.createElement("button");
+    b.className = "btn small danger"; b.textContent = "Remove";
+    b.onclick = () => api("DELETE", `/queue/inject/${s.id}`).then(() => scheduleRefreshNow()).catch(() => {});
+    $("td.actions", tr).appendChild(b);
+    tbody.appendChild(tr);
+  });
+  const live = st.live_injections || {};
+  $("#liveinj").innerHTML = Object.keys(live).length
+    ? Object.entries(live).map(([a, n]) => `<span class="badge run">${esc(a)}: ${n} pending</span>`).join(" ")
+    : "No live injections pending.";
+}
+
+/* ---------------- state tab ---------------- */
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g,
+    c => ({"&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"}[c]));
+}
+function highlightJson(obj) {
+  const json = JSON.stringify(obj, null, 2);
+  return json
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/"([^"]+)":/g, '<span class="k">"$1"</span>:')
+    .replace(/: "((?:[^"\\]|\\.)*)"/g, ': <span class="s">"$1"</span>')
+    .replace(/: (-?\d+\.?\d*(e[+-]?\d+)?|null|true|false)/gi, ': <span class="n">$1</span>');
+}
+function renderState() {
+  if (!S.state) return;
+  $("#statejson").innerHTML = highlightJson(S.state);
+  $("#statewhen").textContent = "snapshot from " +
+    new Date(S.snapshotAt).toTimeString().slice(0, 8);
+}
+
+/* ---------------- status bar / renderAll ---------------- */
+function renderStatus() {
+  const st = S.state;
+  if (!st) { $("#statusbar").innerHTML = `<span class="muted">not connected</span>`; return; }
+  const srv = st.server || {};
+  const a = st.active_session;
+  const q = (st.session_queue || []).length;
+  const parts = [];
+  parts.push(`<span class="chip">uptime <b id="uptime">${Math.round(srv.uptime || 0)}s</b></span>`);
+  parts.push(`<span class="chip">session <b>${esc(a ? a.session_name : "—")}</b>${a ? ` <span class="muted">(${esc(a.source)})</span>` : ""}</span>`);
+  parts.push(`<span class="chip">queue <b>${q}</b></span>`);
+  parts.push(`<span class="chip">agents <b>${a ? Object.keys(a.agents || {}).length : 0}</b></span>`);
+  parts.push(`<span class="chip">WS <b>${S.wsOpen ? "live" : "down"}</b> · ${srv.output_subscribers || 0} sub</span>`);
+  if (srv.config && srv.config.auth_required) parts.push(`<span class="chip">auth <b>on</b></span>`);
+  $("#statusbar").innerHTML = parts.join("");
+}
+setInterval(() => {
+  const st = S.state;
+  const el = $("#uptime");
+  if (st && el) el.textContent = Math.round((st.server.uptime || 0) +
+    (Date.now() - S.snapshotAt) / 1000) + "s";
+}, 1000);
+
+function renderAll() {
+  renderStatus();
+  renderChatBanner();
+  renderAgents();
+  renderSessions();
+  renderQueue();
+  renderInject();
+  renderState();
+  renderDatalists();
+  reloadChatIfSessionChanged();
+  const a = activeSession();
+  if (a) renderPendingUser(a.pending_user_messages || []);
+}
+
+function renderDatalists() {
+  const st = S.state || {};
+  const fill = (id, values) => {
+    const dl = document.getElementById(id); if (!dl) return;
+    dl.innerHTML = "";
+    values.forEach(v => { if (v) { const o = document.createElement("option"); o.value = v; dl.appendChild(o); } });
+  };
+  const names = (st.sessions_on_disk || []).map(s => s.name);
+  const a = activeSession();
+  if (a) names.unshift(a.session_name);
+  fill("sessionnames", [...new Set(names)]);
+  const agentNames = new Set();
+  if (a) Object.keys(a.agents || {}).forEach(n => agentNames.add(n));
+  (st.sessions_on_disk || []).forEach(s => (s.agents || []).forEach(n => agentNames.add(n)));
+  fill("agentnames", [...agentNames]);
+  fill("toolnames", ((st.tools || {}).tools || []).map(t => t.name));
+  fill("promptnames", (st.prompts || []).map(p => p.name));
+  const eps = new Set(a ? Object.keys(a.endpoints || {}) : []);
+  eps.add("local");
+  fill("epnames", [...eps]);
+}
+
+/* ---------------- debounced refresh ---------------- */
+function scheduleRefresh() {
+  if (S.refreshTimer) return;
+  S.refreshTimer = setTimeout(() => { S.refreshTimer = null; doRefresh(); }, 400);
+}
+function scheduleRefreshNow() {
+  if (S.refreshTimer) { clearTimeout(S.refreshTimer); S.refreshTimer = null; }
+  doRefresh();
+}
+async function doRefresh() {
+  if (S.refreshInFlight) return;
+  S.refreshInFlight = true;
+  try {
+    const st = await api("GET", "/state");
+    S.state = st; S.snapshotAt = Date.now();
+    renderAll();
+  } catch (e) {
+    /* toasts already fired */
+  } finally {
+    S.refreshInFlight = false;
+  }
+}
+/* AUTO-RELOAD of the catalog lists (names / tools / prompts / mcp):
+   the backend re-reads tools/, prompts/, mcp_servers.json and
+   names.txt from disk on EVERY /state snapshot, so fetching a fresh
+   snapshot right before a list is shown gives the proven PyQt
+   behaviour — files dropped in or written by agents appear on the
+   very next open, no restart and no Refresh button.
+   maxAgeMs = 0 forces the fetch (used when a dialog/picker opens). */
+async function ensureFreshState(maxAgeMs = 1500) {
+  if (Date.now() - S.snapshotAt <= maxAgeMs) return;
+  try { await doRefresh(); } catch (e) { /* offline — use last snapshot */ }
+}
+
+/* ---------------- tab switching ---------------- */
+function switchTab(name) {
+  $$("#tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  $$(".tabpane").forEach(p => p.classList.toggle("active", p.id === "tab-" + name));
+  localStorage.setItem("ml.tab", name);
+  if (name === "chat") loadChatHistory(false);
+  if (name === "state") renderState();
+}
+$$("#tabs button").forEach(b => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+/* ---------------- form handlers ---------------- */
+$("#connectbtn").addEventListener("click", connect);
+$("#base").addEventListener("keydown", e => { if (e.key === "Enter") connect(); });
+$("#apikey").addEventListener("keydown", e => { if (e.key === "Enter") connect(); });
+$("#refreshbtn").addEventListener("click", async () => {
+  scheduleRefreshNow();
+  if (S.ws && S.wsOpen) { try { S.ws.send(JSON.stringify({ action: "refresh" })); } catch (e) {} }
+});
+
+async function quickNewSession() {
+  const name = prompt("New session name (empty = session<N>):", "");
+  if (name === null) return;
+  try {
+    const body = { user_name: "User" };
+    if (name.trim()) body.name = name.trim();
+    const r = await api("POST", "/control/session/new", body);
+    toast(`Session '${r.session_name}' created — now add agents`, "success");
+    S.chatSession = null;
+    $("#pauseinput").checked = !!r.wait_user_input;   // new sessions start WAITING
+    scheduleRefreshNow();
+    loadChatHistory(true);
+    switchTab("agents");
+  } catch (e) {}
+}
+$("#quicknewsess").addEventListener("click", quickNewSession);
+$("#quicknewsess2").addEventListener("click", quickNewSession);
+$("#newagent").addEventListener("click", () => openAgentDialog(null));
+
+$("#newsessform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = { user_name: fd.get("user_name") || "User" };
+  if ((fd.get("name") || "").trim()) body.name = fd.get("name").trim();
+  try {
+    const r = await api("POST", "/control/session/new", body);
+    toast(`Session '${r.session_name}' created — waiting for your first message`, "success");
+    e.target.reset();
+    S.chatSession = null;
+    $("#pauseinput").checked = !!r.wait_user_input;   // new sessions start WAITING
+    scheduleRefreshNow();
+  } catch (err) {}
+});
+
+$("#loadsessform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  try {
+    const r = await api("POST", "/control/session/load", { path: fd.get("path") });
+    toast(`Loaded '${r.session_name}' from ${r.path}`, "success");
+    e.target.reset();
+    S.chatSession = null;
+    $("#pauseinput").checked = !!r.wait_user_input;   // loads start WAITING
+    scheduleRefreshNow();
+  } catch (err) {}
+});
+
+$("#enqueueform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {
+    session_name: (fd.get("session_name") || "").trim(),
+    message: (fd.get("message") || "").trim() || null,
+    sender: (fd.get("sender") || "user").trim() || "user",
+    activate_all: !!fd.get("activate_all"),
+    auto_finish: !!fd.get("auto_finish"),
+  };
+  const act = (fd.get("activate") || "").split(",").map(x => x.trim()).filter(Boolean);
+  if (act.length) body.activate = act;
+  const it = parseFloat(fd.get("idle_timeout"));
+  if (!isNaN(it) && it > 0) body.idle_timeout = it;
+  if (!body.session_name) { toast("session_name is required", "error"); return; }
+  try {
+    const r = await api("POST", "/queue/sessions", body);
+    const pos = (r.queue || []).findIndex(x => x.id === r.entry.id) + 1;
+    toast(`'${body.session_name}' queued (position ${pos})`, "success");
+    e.target.reset();
+    $('[name="auto_finish"]', e.target).checked = true;
+    scheduleRefreshNow();
+  } catch (err) {}
+});
+
+$("#clearqueue").addEventListener("click", () => {
+  if (!confirm("Cancel ALL pending queue entries?")) return;
+  api("DELETE", "/queue/sessions").then(r =>
+    toast(`Cancelled ${r.cancelled} entries`, "success")).catch(() => {});
+});
+
+$("#injectform").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {
+    session_name: (fd.get("session_name") || "").trim(),
+    agent_name: (fd.get("agent_name") || "").trim(),
+    text: fd.get("text") || "",
+  };
+  if (!body.session_name || !body.agent_name || !body.text.trim()) {
+    toast("session_name, agent_name and text are all required", "error"); return;
+  }
+  try {
+    const r = await api("POST", "/queue/inject", body);
+    toast(r.delivered_live
+      ? `Injected LIVE to '${body.agent_name}' (session is running)`
+      : `Staged for '${body.session_name}' / '${body.agent_name}' — delivered on its next run`,
+      "success", 5000);
+    e.target.reset();
+    scheduleRefreshNow();
+  } catch (err) {}
+});
+
+/* chat box */
+async function sendChat(mode) {
+  const ta = $("#msgtext");
+  const text = ta.value.trim();
+  if (!text) return;
+  try {
+    await api("POST", "/control/message", { text, mode });
+    if (mode === "send_now") ta.value = "";
+    else { ta.value = ""; toast("Message queued for the active session", "success", 2000); }
+  } catch (e) {}
+}
+$("#sendnow").addEventListener("click", () => sendChat("send_now"));
+$("#sendqueue").addEventListener("click", () => sendChat("queue"));
+$("#msgtext").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey && !e.ctrlKey) { e.preventDefault(); sendChat("queue"); }
+  if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); sendChat("send_now"); }
+});
+$("#sendnowbtn2").addEventListener("click", () =>
+  api("POST", "/control/send-now").then(() =>
+    toast("Send Now — engines drain the pending messages", "success", 2500)).catch(() => {}));
+$("#setuser").addEventListener("click", () => {
+  const name = $("#username").value.trim() || "User";
+  api("POST", "/control/user", { name }).then(r => {
+    $("#username").value = r.user_name;
+    toast(`User name set to '${r.user_name}'`, "success", 2000);
+  }).catch(() => {});
+});
+$("#pauseinput").addEventListener("change", (e) => {
+  api("POST", "/control/pause", { paused: e.target.checked }).catch(() => {});
+});
+$("#attachbtn").addEventListener("click", () => {
+  const p = $("#attachpath").value.trim();
+  if (!p) return;
+  api("POST", "/control/attach", { path: p }).then(() => {
+    $("#attachpath").value = "";
+  }).catch(() => {});
+});
+$("#reloadchat").addEventListener("click", () => loadChatHistory(true));
+
+/* console controls */
+$$(".fchip[data-cat]").forEach(ch => ch.addEventListener("click", () => {
+  const cat = ch.dataset.cat;
+  if (S.filters.has(cat)) { S.filters.delete(cat); ch.classList.remove("on"); }
+  else { S.filters.add(cat); ch.classList.add("on"); }
+  applyFilterCss();
+}));
+function applyFilterCss() {
+  const hide = ["chat","think","tool","status","life","err","sys"]
+    .filter(c => !S.filters.has(c));
+  const style = $("#dynfilter") || (() => {
+    const s = document.createElement("style"); s.id = "dynfilter";
+    document.head.appendChild(s); return s;
+  })();
+  style.textContent = hide.length
+    ? hide.map(c => `#console .ln.t-${c}{display:none}`).join("\n")
+    : "";
+}
+$("#clearlog").addEventListener("click", () => {
+  $("#console").innerHTML = ""; S.hiddenCount = 0; S.lastLine = null;
+  Object.keys(S.counts).forEach(k => S.counts[k] = 0);
+  $("#clearlog").textContent = "Clear"; updateFilterCounts();
+});
+
+/* state tab controls */
+$("#statefresh").addEventListener("click", scheduleRefreshNow);
+$("#stateauto").addEventListener("change", (e) => {
+  if (S.stateAutoTimer) { clearInterval(S.stateAutoTimer); S.stateAutoTimer = null; }
+  if (e.target.checked) S.stateAutoTimer = setInterval(() => {
+    if ($("#tab-state").classList.contains("active")) scheduleRefreshNow();
+  }, 5000);
+});
+
+/* sync pause checkbox + user name from state */
+function syncControlsFromState() {
+  const a = activeSession();
+  if (!a) return;
+  if (document.activeElement !== $("#username")) $("#username").value = a.user_name || "";
+  const pc = $("#pauseinput");
+  if (pc.checked !== !!a.paused_user_input) pc.checked = !!a.paused_user_input;
+}
+const _renderStatusBase = renderStatus;
+renderStatus = function () { _renderStatusBase(); syncControlsFromState(); };
+
+/* ---------------- boot ---------------- */
+loadSettings();
+applyFilterCss();
+const savedTab = localStorage.getItem("ml.tab");
+if (savedTab) switchTab(savedTab);
+renderStatus();
+connect();
+</script>
+</body>
+</html>

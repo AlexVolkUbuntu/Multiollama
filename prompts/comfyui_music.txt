@@ -1,0 +1,295 @@
+ComfyUI   AIprompting does not need to be complicated.
+
+You don’t need 20 tags, a secret formula, or a perfect prompt structure. A good prompt simply gives ComfyUI a clear idea of the genre, mood, vocals, instruments, production, and tempo you want.
+
+A useful starting formula is:
+
+Genre + Mood + Vocals + Instruments + Production + Tempo
+
+For example:
+
+dark alternative R&B, emotional male vocals, Rhodes piano,
+deep bass, sparse drums, warm analog production, 88 BPM
+
+This guide explains what is actually useful, what is mostly community advice, and how to troubleshoot common ComfyUI results.
+
+👉 If you want a deeper breakdown of ComfyUI styles, prompt formulas, and a more advanced workflow, read Mastering ComfyUI   AIPrompts Guide: Styles, Cheat Sheet & Pro Workflow (2026).
+1. How to Write a Good ComfyUI Prompt
+
+Start with the most important musical information.
+
+A simple prompt can include:
+
+    Genre: pop, rock, R&B, hip-hop, jazz, EDM
+    Mood: emotional, dark, joyful, nostalgic, aggressive
+    Vocals: male, female, breathy, raspy, powerful, intimate
+    Instruments: piano, guitar, strings, synths, drums
+    Production: warm, cinematic, lo-fi, dry, live, modern
+    Tempo: slow, mid-tempo, 90 BPM, 128 BPM
+
+For example:
+
+cinematic pop, emotional, powerful female vocals,
+piano and orchestral strings, soft drums,
+wide modern production, 100 BPM
+
+You can use fewer elements when the song is simple.
+
+The goal is clarity, not maximum detail.
+
+There is no official ComfyUI rule that says you must use exactly five, eight, or ten tags. Those numbers come from community experimentation.
+
+If a prompt becomes difficult to read, it is probably doing too much.
+2. Put Style Instructions in the Style Field
+
+Use the Style field for the overall sound of the song.
+
+For example:
+
+Bollywood romantic pop, emotional female vocals,
+sitar, tabla, lush strings, warm cinematic production, 110 BPM
+
+Use the Lyrics field for your lyrics and song structure.
+
+For example:
+
+[Verse 1]
+
+I still remember your voice
+Calling my name in the rain
+[Pre-Chorus]
+Maybe we were never meant
+To let this go
+[Chorus]
+Come back to me
+Before the silence wins
+I still need you here
+
+Keeping these two jobs separate makes the workflow easier to control.
+
+Don’t treat [Verse], [Chorus], or [Bridge] like programming commands. They are musical directions, and ComfyUI may interpret them differently between generations.
+3. Useful Song Structure Tags
+
+Common section labels include:
+
+[Intro]
+[Verse 1]
+[Pre-Chorus]
+[Chorus]
+[Verse 2]
+[Bridge]
+[Breakdown]
+[Instrumental]
+[Outro]
+
+You can also add a short performance direction:
+
+[Verse 1]
+
+(whispered)
+I can hear your footsteps
+Outside my door
+
+Or:
+
+[Chorus]
+
+(powerful, emotional)
+I won't let you go
+I won't let you disappear
+
+Performance cues can help communicate your intention, but they are not guaranteed commands.
+
+powerful emotional vocal delivery
+
+Experiment with both.
+4. Don’t Believe Every “ComfyUI Prompt Rule”
+
+👉 Want a larger library of ready-to-use prompts? I’ve compiled 10,000+ tested ComfyUI   AIprompts with copy-paste formulas organized across 200 genres.
+
+A lot of ComfyUI advice online is presented as fact when it is really a creator experiment.
+
+For example, you may hear:
+
+    Genre must be the first tag.
+    You must use exactly eight tags.
+    “Instrumental” must be the final word.
+    ComfyUI reads every tag from left to right with a fixed weighting system.
+    More than 10 tags automatically makes a prompt worse.
+
+There is no official ComfyUI documentation establishing these as universal rules.
+
+That doesn’t mean the techniques are useless.
+
+Putting the main genre early is sensible because it makes your intention clear.
+
+Keeping the prompt short is sensible because fewer conflicting instructions are easier to manage.
+
+Putting instrumental clearly in the prompt makes your intention obvious.
+
+Just don’t confuse useful prompting habits with hard platform specifications.
+5. How to Use BPM
+
+You can include a BPM target:
+
+88 BPM
+
+or:
+
+slow tempo, around 72 BPM
+
+BPM should be treated as a musical target rather than assuming ComfyUI will behave like a DAW with a locked metronome.
+
+If the exact tempo matters, check the generated track.
+
+For example:
+
+dark synthwave, driving male vocals,
+analog synths, punchy drums, cinematic production, 110 BPM
+
+is a useful starting point.
+6. How to Get Better Vocals
+
+“Male vocals” or “female vocals” is often not enough.
+
+Describe the character you want.
+
+Try:
+
+deep male baritone, slightly raspy, intimate delivery
+
+or:
+
+soft breathy female vocals, emotional and intimate
+
+or:
+
+powerful female vocals, clear high notes, dramatic delivery
+
+You can also describe the recording:
+
+close-miked vocals, dry mix, natural dynamics
+
+If the vocal sounds too processed, don’t immediately rewrite the entire prompt.
+
+Change one thing.
+
+For example:
+
+breathy male vocals
+
+could become:
+
+breathy male vocals, warm and natural, close-miked
+
+Then generate again.
+7. How to Make   AIMusic Sound Less Artificial
+
+If your generation sounds overly polished or sterile, try describing the performance and production you want.
+
+Useful phrases include:
+
+live performance feel
+natural dynamics
+human timing
+close-miked recording
+dry intimate mix
+analog warmth
+tape saturation
+
+For example:
+
+indie rock, emotional male vocals,
+live drums, electric guitar, bass,
+natural dynamics, slight tape saturation,
+live performance feel
+
+These phrases don’t “remove AI.” They simply tell ComfyUI to aim for a less sterile musical character.
+8. Avoid Conflicting Instructions
+
+One of the easiest ways to get unpredictable results is to ask for opposite things.
+Get Seven Sky Writes’s stories in your inbox
+
+Join Medium for free to get updates from this writer.
+Subscribe
+
+Remember me for faster sign in
+
+For example:
+
+minimalist arrangement,
+massive full orchestra,
+sparse instrumentation
+
+Or:
+
+1940s jazz,
+modern EDM drop,
+hard techno,
+acoustic folk
+
+These combinations can produce interesting experiments, but they are difficult to control.
+
+Instead, define the relationship between the ideas:
+
+modern cinematic production,
+1940s-inspired jazz arrangement,
+upright bass, brass section, live drums
+
+You can combine styles, but make the hierarchy clear.
+9. What to Do When ComfyUI Gives the Wrong Result
+
+Don’t change everything at once.
+
+Find the biggest problem and change one part of the prompt.
+Wrong genre
+
+Simplify the genre description.
+
+Instead of:
+
+pop, rock, jazz, EDM, trap, folk
+
+try:
+
+alternative pop, emotional female vocals,
+electric guitar, live drums, warm modern production
+
+Too many instruments
+
+Try:
+
+sparse arrangement, piano and bass, light percussion
+
+Weak chorus
+
+Make the chorus shorter and more direct.
+
+[Chorus]
+
+Don't let me go
+Don't let me disappear
+I need you here
+
+Weak vocals
+
+Try:
+
+powerful emotional female vocal,
+strong chorus delivery
+
+Too much reverb
+
+Try:
+
+dry mix, close-miked vocals, minimal room ambience
+
+Generic production
+
+Add one or two specific characteristics:
+
+tape saturation, muted trumpet, dry close-miked vocals
+
+The important rule is:
+
+Fix one problem at a time.
