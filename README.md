@@ -3,7 +3,7 @@
 Headless, cross-platform (Linux / Windows) backend for the proven
 MultiOllama multi-agent / multi-endpoint engine. This is the first
 component of the compound fullstack structure: the same engine the
-PyQt desktop app runs, wrapped in a network API so future frontends
+original desktop app runs, wrapped in a network API so future frontends
 (web browser, mobile apps, other backends on other PCs) can fully
 drive and observe it.
 
@@ -67,7 +67,7 @@ Endpoint-by-endpoint usage with copy-paste `curl` examples:
 Agents produce files on disk (images, audio, video, PDFs, archives —
 written by the core file tools, `core_run_python`, user tools). When
 an agent's **answer** mentions a real local file, the backend scans
-the message (the proven PyQt path scanner — absolute paths, `./`-,
+the message (the proven original path scanner — absolute paths, `./`-,
 `..`- and `~`-relative references, bare names like `output.png`
 resolved against the working directory and the app directory; a
 reference only counts when the file actually EXISTS, so ordinary
@@ -95,7 +95,7 @@ polluted with link text.
 
 ## Auto-reload — tools / MCP / prompts / names (live catalog)
 
-The original PyQt app re-read its lists **whenever a list was called**
+The original original app re-read its lists **whenever a list was called**
 (e.g. every time the Create-Agent dialog opened) and shipped an
 agent-facing `core_reload_tools()` so agents could use tools **they
 created themselves** without restarting the app. The backend keeps both
@@ -182,9 +182,9 @@ persists into history.
 
 ## Endpoints
 
-### Full control — everything the PyQt GUI could do (`/control/*`)
+### Full control — everything the original GUI could do (`/control/*`)
 
-| PyQt control | REST |
+| original control | REST |
 | --- | --- |
 | input box / Send / Send-to-queue | `POST /control/message {text, mode: queue\|send_now}` |
 | pending queue view / clear | `GET` / `DELETE /control/queue` |
@@ -242,7 +242,7 @@ persists into history.
 
 The `send_event()` snippet from the `core_get_send_message_code` tool
 still works — messages enter the active session's history and the
-output stream, exactly like the PyQt app's EventServer.
+output stream, exactly like the original app's EventServer.
 
 ## Interactive vs queue sessions
 
@@ -253,12 +253,12 @@ until a queued session preempts them — the preempted session is
 auto-saved, not lost; disable with `ML_PREEMPT_INTERACTIVE=0`).
 
 Interactive sessions start with **wait user input ON** (the proven
-PyQt default): agents hold their turns until the operator sends a
+original default): agents hold their turns until the operator sends a
 message or presses Send Now — no more agents chatting away before you
 even start. Opt out with `{"wait_user_input": false}` in the request
 body; queue entries always run unattended (OFF).
 
-## Compatibility with the PyQt app
+## Compatibility with the original app
 
 Session files, saved-agent files, the tools/ and prompts/ folders and
 the agent_dialogues/ store use the IDENTICAL formats. A session
@@ -313,7 +313,7 @@ web console's name picker lists the pool.
   backends can call each other's `/control/message` + `/queue/*`.
 * **web browser frontend** — DONE in v1: the built-in web console at
   `GET /` plus CORS support (`ML_CORS_ORIGINS`) for separately-served
-  frontends; WS `/ws/output` + `/control/*` cover the full PyQt
+  frontends; WS `/ws/output` + `/control/*` cover the full original
   surface; OpenAPI schema at `/docs` scaffolds clients.
 * **mobile apps** — the SSE fallback and token auth fit constrained
   network stacks.
